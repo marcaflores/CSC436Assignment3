@@ -1,6 +1,15 @@
 import { useMemo, useState } from 'react'
 import { useFetch } from '../hooks/useFetch'
-import { apiUrl, fetchApiFootball, SEASON, toSquadPlayer } from '../api/apiFootball'
+import {
+  apiUrl,
+  DEFAULT_RATING,
+  fetchAllPages,
+  fetchApiFootball,
+  SEASON,
+  SEASON_LABEL,
+  toRatingsById,
+  toSquadPlayer,
+} from '../api/apiFootball'
 import { POSITIONS } from '../data/formations'
 import { FetchError, LoadingRows } from './FetchStatus'
 import PlayerAvatar from './PlayerAvatar'
@@ -10,45 +19,66 @@ function normalize(text) {
   return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
 }
 
+function clampRating(value) {
+  const number = Math.round(Number(value))
+  return Number.isNaN(number) ? DEFAULT_RATING : Math.min(99, Math.max(40, number))
+}
+
 function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
-  const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
   const [positionFilter, setPositionFilter] = useState('ALL')
+  // OVRs typed in for players with no rating, keyed by player id.
+  const [customRatings, setCustomRatings] = useState({})
 
-  // API-Football returns 20 players per page, and each page costs one request.
-  const url = apiUrl('/players', { team: club.id, season: SEASON, page }, { broken: simulateError })
-  const { data, loading, error, retry } = useFetch(url, fetchApiFootball)
+  // Two requests: who is in the squad now, and how they rated last season.
+  const squadUrl = apiUrl('/players/squads', { team: club.id }, { broken: simulateError })
+  const statsUrl = apiUrl('/players', { team: club.id, season: SEASON }, { broken: simulateError })
+  const squadRequest = useFetch(squadUrl, fetchApiFootball)
+  const statsRequest = useFetch(statsUrl, fetchAllPages)
 
-  const players = useMemo(
-    () => (data ? data.response.map(toSquadPlayer).filter(Boolean) : []),
-    [data],
-  )
+  const loading = squadRequest.loading || statsRequest.loading
+  const error = squadRequest.error || statsRequest.error
 
-  // Searching and filtering only narrow the page already fetched, so typing never sends a request.
+  function retry() {
+    // Only the request that failed refetches; the other comes straight from the cache.
+    squadRequest.retry()
+    statsRequest.retry()
+  }
+
+  const players = useMemo(() => {
+    if (!squadRequest.data || !statsRequest.data) return []
+    const ratingsById = toRatingsById(statsRequest.data.response)
+    const squadPlayers = squadRequest.data.response[0]?.players ?? []
+    return squadPlayers.map((player) => toSquadPlayer(player, club, ratingsById)).filter(Boolean)
+  }, [squadRequest.data, statsRequest.data, club])
+
+  // Searching and filtering only narrow the squad already fetched, so typing never sends a request.
   const query = normalize(search.trim())
   const visiblePlayers = players.filter(
     (player) =>
       (positionFilter === 'ALL' || player.position === positionFilter) &&
       normalize(player.name).includes(query),
   )
+  const unratedCount = players.filter((player) => player.rating === null).length
 
-  const totalPages = data?.paging.total
-  const unratedCount = data ? data.response.length - players.length : 0
+  function handleAdd(player) {
+    const rating = player.rating ?? clampRating(customRatings[player.id] ?? DEFAULT_RATING)
+    onAddPlayer({ ...player, rating })
+  }
 
   function renderPlayers() {
-    if (loading) return <LoadingRows label="Loading players…" />
-    if (error) return <FetchError title="Couldn't load players" error={error} onRetry={retry} />
-    if (players.length === 0) {
-      return <p className="empty-state">No rated players on this page.</p>
-    }
+    if (loading) return <LoadingRows label="Loading squad…" />
+    if (error) return <FetchError title="Couldn't load the squad" error={error} onRetry={retry} />
+    if (players.length === 0) return <p className="empty-state">No squad listed for {club.name}.</p>
     if (visiblePlayers.length === 0) {
-      return <p className="empty-state">No players on this page match your search.</p>
+      return <p className="empty-state">No {club.name} players match your search.</p>
     }
 
     return (
       <ul className="scout-list">
         {visiblePlayers.map((player) => {
           const alreadyAdded = squad.some((squadPlayer) => squadPlayer.id === player.id)
+          const isUnrated = player.rating === null
 
           return (
             <li key={player.id} className="scout-card">
@@ -59,15 +89,28 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
                   <span className={`position-badge position-badge--${player.position}`}>
                     {player.position}
                   </span>{' '}
-                  OVR {player.rating}
+                  {isUnrated ? 'No rating' : `OVR ${player.rating}`}
                 </p>
               </div>
+              {isUnrated && !alreadyAdded && (
+                <input
+                  type="number"
+                  className="scout-card__rating-input"
+                  min={40}
+                  max={99}
+                  value={customRatings[player.id] ?? DEFAULT_RATING}
+                  onChange={(event) =>
+                    setCustomRatings((prev) => ({ ...prev, [player.id]: event.target.value }))
+                  }
+                  aria-label={`Starting OVR for ${player.name}`}
+                />
+              )}
               <button
                 type="button"
                 className="btn btn--outline"
                 disabled={alreadyAdded}
                 aria-label={alreadyAdded ? `${player.name} added` : `Add ${player.name}`}
-                onClick={() => onAddPlayer(player)}
+                onClick={() => handleAdd(player)}
               >
                 {alreadyAdded ? 'Added' : 'Add'}
               </button>
@@ -86,8 +129,8 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
           className="filter-input"
           value={search}
           onChange={(event) => setSearch(event.target.value)}
-          placeholder="Search this page"
-          aria-label={`Search ${club.name} players on this page`}
+          placeholder="Search squad"
+          aria-label={`Search ${club.name} players`}
         />
         <select
           className="filter-select"
@@ -106,35 +149,12 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
 
       {renderPlayers()}
 
-      {unratedCount > 0 && (
+      {!loading && !error && unratedCount > 0 && (
         <p className="scout-note">
-          {unratedCount} {unratedCount === 1 ? 'player has' : 'players have'} no {SEASON} rating
-          and {unratedCount === 1 ? 'is' : 'are'} hidden.
+          {unratedCount} {unratedCount === 1 ? 'player has' : 'players have'} no {SEASON_LABEL}{' '}
+          rating for {club.name}, so you set their starting OVR.
         </p>
       )}
-
-      <nav className="pager" aria-label={`${club.name} player pages`}>
-        <button
-          type="button"
-          className="btn btn--outline"
-          disabled={loading || page === 1}
-          onClick={() => setPage((current) => current - 1)}
-        >
-          ‹ Prev
-        </button>
-        <span className="pager__status">
-          Page {page}
-          {totalPages ? ` of ${totalPages}` : ''}
-        </span>
-        <button
-          type="button"
-          className="btn btn--outline"
-          disabled={loading || !totalPages || page >= totalPages}
-          onClick={() => setPage((current) => current + 1)}
-        >
-          Next ›
-        </button>
-      </nav>
     </div>
   )
 }

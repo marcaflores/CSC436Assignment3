@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { LEAGUES, SEASON } from '../api/apiFootball'
+import { LEAGUES, SEASON_LABEL } from '../api/apiFootball'
 import ClubPicker from './ClubPicker'
 import ClubPlayers from './ClubPlayers'
 
@@ -19,7 +19,7 @@ function ScoutPlayers({ squad, onAddPlayer }) {
       <div className="player-list__header">
         <div>
           <h2 className="panel-title">Scout Players</h2>
-          <p className="scout-players__subtitle">Real players from the {SEASON} season</p>
+          <p className="scout-players__subtitle">Current squads · ratings from {SEASON_LABEL}</p>
         </div>
         <select
           className="filter-select"

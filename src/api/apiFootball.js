@@ -6,8 +6,13 @@ const API_KEY = import.meta.env.VITE_API_FOOTBALL_KEY
 // The .invalid domain can never resolve, so requests fail like a dropped network and cost no quota.
 const BROKEN_BASE_URL = 'https://v3.football.api-sports.invalid'
 
-// Latest season the free plan can read.
+// Squads are current, but the free plan only has stats up to the 2024 season (2024–25),
+// so that's where ratings come from.
 export const SEASON = 2024
+export const SEASON_LABEL = '2024–25'
+
+// Starting OVR for players with no rating from SEASON, e.g. new signings. Matches PlayerForm.
+export const DEFAULT_RATING = 70
 
 export const LEAGUES = [
   { id: 39, name: 'Premier League' },
@@ -78,6 +83,17 @@ export async function fetchApiFootball(url, signal) {
   return body
 }
 
+// Fetcher for paginated endpoints: loads every page and merges them into one `response` list.
+export async function fetchAllPages(url, signal) {
+  const first = await fetchApiFootball(`${url}&page=1`, signal)
+  const rest = await Promise.all(
+    Array.from({ length: first.paging.total - 1 }, (_, index) =>
+      fetchApiFootball(`${url}&page=${index + 2}`, signal),
+    ),
+  )
+  return { ...first, response: [first, ...rest].flatMap((page) => page.response) }
+}
+
 const POSITION_CODES = {
   Goalkeeper: 'GK',
   Defender: 'DEF',
@@ -90,24 +106,36 @@ function toOverall(matchRating) {
   return Math.min(99, Math.max(40, Math.round(Number(matchRating) * 10 + 10)))
 }
 
-// Turns one /players result into a squad player, or null if they never got a rating this season.
-export function toSquadPlayer({ player, statistics }) {
-  const rated = statistics.filter((stat) => stat.games.rating)
-  if (rated.length === 0) return null
+// Maps player id → OVR from a club's /players stats. Players who never got a match rating are left out.
+export function toRatingsById(statsResponse) {
+  const ratings = new Map()
 
-  // A player can have stats in several competitions; use the one they played the most minutes in.
-  const main = rated.reduce((best, stat) =>
-    (stat.games.minutes ?? 0) > (best.games.minutes ?? 0) ? stat : best,
-  )
-  const position = POSITION_CODES[main.games.position]
+  for (const { player, statistics } of statsResponse) {
+    const rated = statistics.filter((stat) => stat.games.rating)
+    if (rated.length === 0) continue
+
+    // A player can have stats in several competitions; use the one they played the most minutes in.
+    const main = rated.reduce((best, stat) =>
+      (stat.games.minutes ?? 0) > (best.games.minutes ?? 0) ? stat : best,
+    )
+    ratings.set(player.id, toOverall(main.games.rating))
+  }
+
+  return ratings
+}
+
+// Turns one player from /players/squads into a squad player, or null if their position is unknown.
+// `rating` is null when they have no SEASON rating for this club.
+export function toSquadPlayer(player, club, ratingsById) {
+  const position = POSITION_CODES[player.position]
   if (!position) return null
 
   return {
     id: `api-${player.id}`,
     name: player.name,
     position,
-    rating: toOverall(main.games.rating),
+    rating: ratingsById.get(player.id) ?? null,
     photo: player.photo,
-    club: main.team.name,
+    club: club.name,
   }
 }
