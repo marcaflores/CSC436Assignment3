@@ -11,6 +11,7 @@ function PlayerCard({ player, onRemove }) {
         <p className="player-card__name">{player.name}</p>
         <p className="player-card__rating">
           OVR {player.rating}
+          {player.ratingEstimated && ' est.'}
           {player.club && ` · ${player.club}`}
         </p>
       </div>

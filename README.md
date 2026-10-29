@@ -9,9 +9,9 @@ Matchday Builder is a soccer team builder that uses real players. Pick a league 
 ## Features
 
 - **Real squads:** browse the clubs in the Premier League, La Liga, Serie A, Bundesliga and Ligue 1, and see each club's current squad with player photos and club crests
-- **Real ratings:** each player's OVR comes from their average match rating in 2024–25. Players who weren't at the club that season, usually new signings, have a **Get rating** button that looks up their 2024–25 rating from their old club
+- **Real ratings:** each player's OVR comes from their average match rating in 2024–25. Players who weren't at the club that season, usually new signings, get an estimate marked **est.**: the club's average for their position, a little lower for players under 21. Estimates cost no extra requests
 - **Search and filter:** search a squad by name (accents optional, so "odegaard" finds "Ødegaard") and filter by position. Both work on the squad already loaded, so typing never sends a request
-- **Loading, error and data states:** every request shows that it's loading (a skeleton, or "Checking rating…" for Get rating), then either the data or an error message with a retry button
+- **Loading, error and data states:** every request shows a loading skeleton, then either the data or an error message with a **Try again** button
 - **Custom players:** create your own players with a name, position and rating
 - **Two teams:** view Team 1, Team 2 or both side by side. A player can only be in one lineup at a time
 - **Formations:** 4-3-3, 4-4-2 and 3-5-2, each laid out on the field
@@ -33,14 +33,13 @@ Check **Simulate API failure** at the bottom of the Scout Players panel. Request
 | `/teams?league=…&season=2024` | the clubs in a league |
 | `/players/squads?team=…` | a club's current squad, with photos |
 | `/players?team=…&season=2024` | the club's 2024–25 match ratings, which become OVR |
-| `/players?id=…&season=2024` | one player's 2024–25 rating from any club (Get rating) |
 
 The free plan sets the limits the app works around:
 
 - **Seasons 2022 to 2024 only.** Squads are current, but ratings and the league club lists are from 2024–25.
-- **100 requests a day.** Successful responses are cached in the browser for 12 hours, and Get rating only runs when clicked.
+- **100 requests a day.** Successful responses are cached in the browser for 12 hours, so a club you have opened before costs nothing.
 - **10 requests a minute.** The app spaces out its own requests to stay under this. Opening several new clubs quickly makes the next one wait.
-- **Stats pages 1 to 3 only.** Players listed after page 3 of a club's stats show as unrated and can use Get rating.
+- **Stats pages 1 to 3 only.** Players listed after page 3 of a club's stats get an estimated rating.
 
 The key ships in the frontend bundle, so anyone can see it in the browser. That's acceptable for a free-tier key on a class project.
 
@@ -81,7 +80,7 @@ src/
     ScoutPlayers.jsx    league picker, club or squad view, simulate-failure toggle
     ClubPicker.jsx      grid of clubs in the chosen league
     ClubPlayers.jsx     a club's squad with search and position filter
-    ScoutCard.jsx       one scouted player, with Get rating for new signings
+    ScoutCard.jsx       one scouted player with an Add button
     FetchStatus.jsx     shared loading skeletons and error message
     PlayerAvatar.jsx    player photo, or initials when there isn't one
     PlayerForm.jsx      controlled form for custom players

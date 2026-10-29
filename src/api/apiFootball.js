@@ -11,8 +11,8 @@ const BROKEN_BASE_URL = 'https://v3.football.api-sports.invalid'
 export const SEASON = 2024
 export const SEASON_LABEL = '2024–25'
 
-// Starting OVR for players with no rating from SEASON, e.g. new signings. Matches PlayerForm.
-export const DEFAULT_RATING = 70
+// Fallback OVR when a club has no rated players to estimate from. Matches PlayerForm.
+const DEFAULT_RATING = 70
 
 export const LEAGUES = [
   { id: 39, name: 'Premier League' },
@@ -155,43 +155,59 @@ function toOverall(matchRating) {
   return Math.min(99, Math.max(40, Math.round(Number(matchRating) * 10 + 10)))
 }
 
-// OVR and club from one /players result, or null if they never got a match rating.
-// A player can have stats in several competitions (or clubs); use the one with the most minutes.
-export function toSeasonRating(statistics) {
-  const rated = statistics.filter((stat) => stat.games.rating)
-  if (rated.length === 0) return null
-
-  const main = rated.reduce((best, stat) =>
-    (stat.games.minutes ?? 0) > (best.games.minutes ?? 0) ? stat : best,
-  )
-  return { rating: toOverall(main.games.rating), club: main.team.name }
-}
-
 // Maps player id → OVR from a club's /players stats. Players who never got a match rating are left out.
 export function toRatingsById(statsResponse) {
   const ratings = new Map()
 
   for (const { player, statistics } of statsResponse) {
-    const seasonRating = toSeasonRating(statistics)
-    if (seasonRating) ratings.set(player.id, seasonRating.rating)
+    const rated = statistics.filter((stat) => stat.games.rating)
+    if (rated.length === 0) continue
+
+    // A player can have stats in several competitions; use the one they played the most minutes in.
+    const main = rated.reduce((best, stat) =>
+      (stat.games.minutes ?? 0) > (best.games.minutes ?? 0) ? stat : best,
+    )
+    ratings.set(player.id, toOverall(main.games.rating))
   }
 
   return ratings
 }
 
-// Turns one player from /players/squads into a squad player, or null if their position is unknown.
-// `rating` is null when they have no SEASON rating for this club.
-export function toSquadPlayer(player, club, ratingsById) {
-  const position = POSITION_CODES[player.position]
-  if (!position) return null
+function average(numbers) {
+  return numbers.reduce((sum, number) => sum + number, 0) / numbers.length
+}
 
-  return {
-    id: `api-${player.id}`,
-    apiId: player.id,
-    name: player.name,
-    position,
-    rating: ratingsById.get(player.id) ?? null,
-    photo: player.photo,
-    club: club.name,
-  }
+// Players under this age lose a little from their estimate, so youth players rank below starters.
+const YOUTH_AGE = 21
+const YOUTH_PENALTY_PER_YEAR = 3
+
+// Builds the squad list from /players/squads plus the club's SEASON ratings. Players with no
+// rating (mostly new signings) get an estimate instead of costing another request: the club's
+// average for their position, a little lower for young players. Estimates are flagged.
+export function toSquadPlayers(squadPlayers, club, ratingsById) {
+  const players = squadPlayers
+    .filter((player) => POSITION_CODES[player.position])
+    .map((player) => ({
+      id: `api-${player.id}`,
+      name: player.name,
+      position: POSITION_CODES[player.position],
+      rating: ratingsById.get(player.id) ?? null,
+      age: player.age,
+      photo: player.photo,
+      club: club.name,
+    }))
+
+  const rated = players.filter((player) => player.rating !== null)
+  const clubAverage = rated.length ? average(rated.map((player) => player.rating)) : DEFAULT_RATING
+
+  return players.map(({ age, ...player }) => {
+    if (player.rating !== null) return player
+
+    const samePosition = rated.filter((other) => other.position === player.position)
+    const base = samePosition.length ? average(samePosition.map((other) => other.rating)) : clubAverage
+    const youthPenalty = Math.max(0, YOUTH_AGE - (age ?? YOUTH_AGE)) * YOUTH_PENALTY_PER_YEAR
+    const rating = Math.min(99, Math.max(40, Math.round(base - youthPenalty)))
+
+    return { ...player, rating, ratingEstimated: true }
+  })
 }

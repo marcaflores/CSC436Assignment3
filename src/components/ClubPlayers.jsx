@@ -7,7 +7,7 @@ import {
   SEASON,
   SEASON_LABEL,
   toRatingsById,
-  toSquadPlayer,
+  toSquadPlayers,
 } from '../api/apiFootball'
 import { POSITIONS } from '../data/formations'
 import { FetchError, LoadingRows } from './FetchStatus'
@@ -28,9 +28,6 @@ function normalize(text) {
 function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
   const [search, setSearch] = useState('')
   const [positionFilter, setPositionFilter] = useState('ALL')
-  // Players whose rating lookup was asked for. Kept here so a row hidden by the search and shown
-  // again keeps its looked-up rating (it comes back from the cache instead of costing a request).
-  const [lookupIds, setLookupIds] = useState(() => new Set())
 
   // Two requests: who is in the squad now, and how they rated last season.
   const squadUrl = apiUrl('/players/squads', { team: club.id }, { broken: simulateError })
@@ -51,7 +48,7 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
     if (!squadRequest.data || !statsRequest.data) return []
     const ratingsById = toRatingsById(statsRequest.data.response)
     const squadPlayers = squadRequest.data.response[0]?.players ?? []
-    return squadPlayers.map((player) => toSquadPlayer(player, club, ratingsById)).filter(Boolean)
+    return toSquadPlayers(squadPlayers, club, ratingsById)
   }, [squadRequest.data, statsRequest.data, club])
 
   // Searching and filtering only narrow the squad already fetched, so typing never sends a request.
@@ -61,11 +58,7 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
       (positionFilter === 'ALL' || player.position === positionFilter) &&
       normalize(player.name).includes(query),
   )
-  const unratedCount = players.filter((player) => player.rating === null).length
-
-  function handleLookup(playerId) {
-    setLookupIds((prev) => new Set(prev).add(playerId))
-  }
+  const estimatedCount = players.filter((player) => player.ratingEstimated).length
 
   function renderPlayers() {
     if (loading) return <LoadingRows label="Loading squad…" />
@@ -82,9 +75,6 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
             key={player.id}
             player={player}
             alreadyAdded={squad.some((squadPlayer) => squadPlayer.id === player.id)}
-            lookupRequested={lookupIds.has(player.id)}
-            simulateError={simulateError}
-            onLookup={handleLookup}
             onAdd={onAddPlayer}
           />
         ))}
@@ -120,11 +110,10 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
 
       {renderPlayers()}
 
-      {!loading && !error && unratedCount > 0 && (
+      {!loading && !error && estimatedCount > 0 && (
         <p className="scout-note">
-          {unratedCount} {unratedCount === 1 ? 'player has' : 'players have'} no {SEASON_LABEL} rating
-          for {club.name}, usually new signings. Get rating looks up their {SEASON_LABEL} rating from any
-          club, one request each.
+          est. means the player has no {SEASON_LABEL} rating for {club.name}, usually a new signing,
+          so their OVR is the club's average for their position (a little lower for players under 21).
         </p>
       )}
     </div>
