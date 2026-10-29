@@ -49,19 +49,39 @@ function writeCache(url, data) {
   }
 }
 
-// Fetcher for useFetch: resolves with the parsed body or rejects with a human-readable Error.
-export async function fetchApiFootball(url, signal) {
-  const cached = readCache(url)
-  if (cached) return cached
+// The free plan also allows only 10 requests a minute. Going over returns a 429 without CORS
+// headers, which the browser hides as a network error, so requests are paced to stay under it.
+const RATE_LIMIT = 10
+const RATE_WINDOW_MS = 60 * 1000
+const sentAt = []
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function waitForRateLimit() {
+  for (;;) {
+    const now = Date.now()
+    while (sentAt.length > 0 && now - sentAt[0] >= RATE_WINDOW_MS) sentAt.shift()
+    if (sentAt.length < RATE_LIMIT) {
+      sentAt.push(now)
+      return
+    }
+    await sleep(sentAt[0] + RATE_WINDOW_MS - now)
+  }
+}
+
+async function request(url) {
+  // The broken URL never reaches the server, so it doesn't need a rate-limit slot.
+  if (!url.startsWith(BROKEN_BASE_URL)) await waitForRateLimit()
 
   let response
   try {
-    response = await fetch(url, { headers: { 'x-apisports-key': API_KEY }, signal })
-  } catch (error) {
-    if (error.name === 'AbortError') throw error
+    response = await fetch(url, { headers: { 'x-apisports-key': API_KEY } })
+  } catch {
     throw new Error(
       navigator.onLine
-        ? "Couldn't reach API-Football. The service may be down or the request was blocked."
+        ? "Couldn't reach API-Football. If you opened several clubs quickly, the free plan's limit of 10 requests a minute may have been hit, so wait a moment and try again."
         : 'You appear to be offline. Check your internet connection.',
     )
   }
@@ -83,11 +103,40 @@ export async function fetchApiFootball(url, signal) {
   return body
 }
 
+// Requests already on their way, by url. A second caller for the same url (like React running
+// an effect twice in development) shares the first request instead of spending another one.
+const inFlight = new Map()
+
+// Rejects as soon as `signal` aborts, without cancelling the shared request underneath.
+function abortable(promise, signal) {
+  return new Promise((resolve, reject) => {
+    const abort = () => reject(new DOMException('Request aborted', 'AbortError'))
+    if (signal?.aborted) return abort()
+    signal?.addEventListener('abort', abort, { once: true })
+    promise.then(resolve, reject)
+  })
+}
+
+// Fetcher for useFetch: resolves with the parsed body or rejects with a human-readable Error.
+export function fetchApiFootball(url, signal) {
+  const cached = readCache(url)
+  if (cached) return Promise.resolve(cached)
+
+  if (!inFlight.has(url)) {
+    inFlight.set(url, request(url).finally(() => inFlight.delete(url)))
+  }
+  return abortable(inFlight.get(url), signal)
+}
+
+// The free plan rejects any page past 3, so stats beyond that are skipped.
+const MAX_PAGE = 3
+
 // Fetcher for paginated endpoints: loads every page and merges them into one `response` list.
 export async function fetchAllPages(url, signal) {
   const first = await fetchApiFootball(`${url}&page=1`, signal)
+  const lastPage = Math.min(first.paging.total, MAX_PAGE)
   const rest = await Promise.all(
-    Array.from({ length: first.paging.total - 1 }, (_, index) =>
+    Array.from({ length: lastPage - 1 }, (_, index) =>
       fetchApiFootball(`${url}&page=${index + 2}`, signal),
     ),
   )

@@ -14,9 +14,16 @@ import { POSITIONS } from '../data/formations'
 import { FetchError, LoadingRows } from './FetchStatus'
 import PlayerAvatar from './PlayerAvatar'
 
-// Lowercase and strip accents so "martinez" finds "Martínez".
+// Letters that aren't a base letter plus an accent, so NFD can't simplify them.
+const SPECIAL_LETTERS = { ø: 'o', æ: 'ae', œ: 'oe', ß: 'ss', ł: 'l', đ: 'd', ı: 'i' }
+
+// Lowercase and strip accents so "martinez" finds "Martínez" and "odegaard" finds "Ødegaard".
 function normalize(text) {
-  return text.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/[øæœßłđı]/g, (letter) => SPECIAL_LETTERS[letter])
 }
 
 function clampRating(value) {
@@ -89,7 +96,7 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
                   <span className={`position-badge position-badge--${player.position}`}>
                     {player.position}
                   </span>{' '}
-                  {isUnrated ? 'No rating' : `OVR ${player.rating}`}
+                  {isUnrated ? 'Unrated' : `OVR ${player.rating}`}
                 </p>
               </div>
               {isUnrated && !alreadyAdded && (

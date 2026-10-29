@@ -445,6 +445,10 @@
   text-overflow: ellipsis;
 }
 
+.scout-card .player-card__rating {
+  white-space: nowrap;
+}
+
 .scout-card .position-badge {
   min-width: 36px;
   height: 20px;
