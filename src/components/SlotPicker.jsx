@@ -1,3 +1,5 @@
+import PlayerAvatar from './PlayerAvatar'
+
 // Overlay listing the players who can fill the selected pitch slot.
 function SlotPicker({ slot, assignedPlayer, candidates, onPick, onClear, onClose }) {
   function handleKeyDown(event) {
@@ -40,7 +42,10 @@ function SlotPicker({ slot, assignedPlayer, candidates, onPick, onClear, onClose
             {candidates.map((player) => (
               <li key={player.id}>
                 <button type="button" className="slot-picker__option" onClick={() => onPick(player.id)}>
-                  <span className="slot-picker__option-name">{player.name}</span>
+                  <span className="slot-picker__option-player">
+                    <PlayerAvatar player={player} size="sm" />
+                    <span className="slot-picker__option-name">{player.name}</span>
+                  </span>
                   <span className="slot-picker__option-rating">{player.rating}</span>
                 </button>
               </li>

@@ -1,3 +1,5 @@
+import PlayerAvatar from './PlayerAvatar'
+
 function PitchSlot({ slot, assignedPlayer, isActive, onSelect }) {
   const chipClass = assignedPlayer
     ? `pitch-slot__chip position-badge--${assignedPlayer.position}`
@@ -17,6 +19,7 @@ function PitchSlot({ slot, assignedPlayer, isActive, onSelect }) {
       >
         {assignedPlayer ? (
           <>
+            <PlayerAvatar player={assignedPlayer} size="sm" />
             <span className="pitch-slot__name">{assignedPlayer.name}</span>
             <span className="pitch-slot__rating">
               {slot.title} · {assignedPlayer.rating}

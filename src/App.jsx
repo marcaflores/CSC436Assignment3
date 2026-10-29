@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Header from './components/Header'
-import PresetPlayers from './components/PresetPlayers'
+import ScoutPlayers from './components/ScoutPlayers'
 import PlayerForm from './components/PlayerForm'
 import PlayerList from './components/PlayerList'
 import TeamSelector from './components/TeamSelector'
@@ -98,7 +98,7 @@ function App() {
 
       <main className="app-layout">
         <section className="app-layout__sidebar">
-          <PresetPlayers squad={squad} onAddPlayer={handleAddPlayer} />
+          <ScoutPlayers squad={squad} onAddPlayer={handleAddPlayer} />
           <PlayerForm onAddPlayer={handleAddPlayer} />
         </section>
 
