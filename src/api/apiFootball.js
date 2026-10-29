@@ -155,19 +155,25 @@ function toOverall(matchRating) {
   return Math.min(99, Math.max(40, Math.round(Number(matchRating) * 10 + 10)))
 }
 
+// OVR and club from one /players result, or null if they never got a match rating.
+// A player can have stats in several competitions (or clubs); use the one with the most minutes.
+export function toSeasonRating(statistics) {
+  const rated = statistics.filter((stat) => stat.games.rating)
+  if (rated.length === 0) return null
+
+  const main = rated.reduce((best, stat) =>
+    (stat.games.minutes ?? 0) > (best.games.minutes ?? 0) ? stat : best,
+  )
+  return { rating: toOverall(main.games.rating), club: main.team.name }
+}
+
 // Maps player id → OVR from a club's /players stats. Players who never got a match rating are left out.
 export function toRatingsById(statsResponse) {
   const ratings = new Map()
 
   for (const { player, statistics } of statsResponse) {
-    const rated = statistics.filter((stat) => stat.games.rating)
-    if (rated.length === 0) continue
-
-    // A player can have stats in several competitions; use the one they played the most minutes in.
-    const main = rated.reduce((best, stat) =>
-      (stat.games.minutes ?? 0) > (best.games.minutes ?? 0) ? stat : best,
-    )
-    ratings.set(player.id, toOverall(main.games.rating))
+    const seasonRating = toSeasonRating(statistics)
+    if (seasonRating) ratings.set(player.id, seasonRating.rating)
   }
 
   return ratings
@@ -181,6 +187,7 @@ export function toSquadPlayer(player, club, ratingsById) {
 
   return {
     id: `api-${player.id}`,
+    apiId: player.id,
     name: player.name,
     position,
     rating: ratingsById.get(player.id) ?? null,

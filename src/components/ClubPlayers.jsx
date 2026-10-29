@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react'
 import { useFetch } from '../hooks/useFetch'
 import {
   apiUrl,
-  DEFAULT_RATING,
   fetchAllPages,
   fetchApiFootball,
   SEASON,
@@ -12,7 +11,7 @@ import {
 } from '../api/apiFootball'
 import { POSITIONS } from '../data/formations'
 import { FetchError, LoadingRows } from './FetchStatus'
-import PlayerAvatar from './PlayerAvatar'
+import ScoutCard from './ScoutCard'
 
 // Letters that aren't a base letter plus an accent, so NFD can't simplify them.
 const SPECIAL_LETTERS = { ø: 'o', æ: 'ae', œ: 'oe', ß: 'ss', ł: 'l', đ: 'd', ı: 'i' }
@@ -26,16 +25,12 @@ function normalize(text) {
     .replace(/[øæœßłđı]/g, (letter) => SPECIAL_LETTERS[letter])
 }
 
-function clampRating(value) {
-  const number = Math.round(Number(value))
-  return Number.isNaN(number) ? DEFAULT_RATING : Math.min(99, Math.max(40, number))
-}
-
 function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
   const [search, setSearch] = useState('')
   const [positionFilter, setPositionFilter] = useState('ALL')
-  // OVRs typed in for players with no rating, keyed by player id.
-  const [customRatings, setCustomRatings] = useState({})
+  // Players whose rating lookup was asked for. Kept here so a row hidden by the search and shown
+  // again keeps its looked-up rating (it comes back from the cache instead of costing a request).
+  const [lookupIds, setLookupIds] = useState(() => new Set())
 
   // Two requests: who is in the squad now, and how they rated last season.
   const squadUrl = apiUrl('/players/squads', { team: club.id }, { broken: simulateError })
@@ -68,9 +63,8 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
   )
   const unratedCount = players.filter((player) => player.rating === null).length
 
-  function handleAdd(player) {
-    const rating = player.rating ?? clampRating(customRatings[player.id] ?? DEFAULT_RATING)
-    onAddPlayer({ ...player, rating })
+  function handleLookup(playerId) {
+    setLookupIds((prev) => new Set(prev).add(playerId))
   }
 
   function renderPlayers() {
@@ -83,47 +77,17 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
 
     return (
       <ul className="scout-list">
-        {visiblePlayers.map((player) => {
-          const alreadyAdded = squad.some((squadPlayer) => squadPlayer.id === player.id)
-          const isUnrated = player.rating === null
-
-          return (
-            <li key={player.id} className="scout-card">
-              <PlayerAvatar player={player} />
-              <div className="scout-card__info">
-                <p className="scout-card__name">{player.name}</p>
-                <p className="player-card__rating">
-                  <span className={`position-badge position-badge--${player.position}`}>
-                    {player.position}
-                  </span>{' '}
-                  {isUnrated ? 'Unrated' : `OVR ${player.rating}`}
-                </p>
-              </div>
-              {isUnrated && !alreadyAdded && (
-                <input
-                  type="number"
-                  className="scout-card__rating-input"
-                  min={40}
-                  max={99}
-                  value={customRatings[player.id] ?? DEFAULT_RATING}
-                  onChange={(event) =>
-                    setCustomRatings((prev) => ({ ...prev, [player.id]: event.target.value }))
-                  }
-                  aria-label={`Starting OVR for ${player.name}`}
-                />
-              )}
-              <button
-                type="button"
-                className="btn btn--outline"
-                disabled={alreadyAdded}
-                aria-label={alreadyAdded ? `${player.name} added` : `Add ${player.name}`}
-                onClick={() => handleAdd(player)}
-              >
-                {alreadyAdded ? 'Added' : 'Add'}
-              </button>
-            </li>
-          )
-        })}
+        {visiblePlayers.map((player) => (
+          <ScoutCard
+            key={player.id}
+            player={player}
+            alreadyAdded={squad.some((squadPlayer) => squadPlayer.id === player.id)}
+            lookupRequested={lookupIds.has(player.id)}
+            simulateError={simulateError}
+            onLookup={handleLookup}
+            onAdd={onAddPlayer}
+          />
+        ))}
       </ul>
     )
   }
@@ -158,8 +122,9 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
 
       {!loading && !error && unratedCount > 0 && (
         <p className="scout-note">
-          {unratedCount} {unratedCount === 1 ? 'player has' : 'players have'} no {SEASON_LABEL}{' '}
-          rating for {club.name}, so you set their starting OVR.
+          {unratedCount} {unratedCount === 1 ? 'player has' : 'players have'} no {SEASON_LABEL} rating
+          for {club.name}, usually new signings. Get rating looks up their {SEASON_LABEL} rating from any
+          club, one request each.
         </p>
       )}
     </div>
