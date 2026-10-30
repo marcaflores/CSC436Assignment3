@@ -1,28 +1,24 @@
-import { useFetch } from '../hooks/useFetch'
-import { apiUrl, fetchApiFootball, SEASON, SEASON_LABEL } from '../api/apiFootball'
 import { FetchError, LoadingRows } from './FetchStatus'
 
-function formatGoalDiff(goalsDiff) {
-  return goalsDiff > 0 ? `+${goalsDiff}` : String(goalsDiff)
+function formatGoalDiff(goalDifference) {
+  return goalDifference > 0 ? `+${goalDifference}` : String(goalDifference)
 }
 
-function StandingsTable({ league, simulateError, onOpenClub }) {
-  const url = apiUrl('/standings', { league: league.id, season: SEASON }, { broken: simulateError })
-  const { data, loading, error, retry } = useFetch(url, fetchApiFootball)
+// The league table. The request lives in LeagueView, which passes its { data, loading, error, retry }.
+function StandingsTable({ competition, standings, onOpenClub }) {
+  const { data, loading, error, retry } = standings
 
   function renderTable() {
     if (loading) return <LoadingRows label="Loading table…" rows={10} />
     if (error) return <FetchError title="Couldn't load the table" error={error} onRetry={retry} />
 
-    // Leagues without groups have a single table at standings[0].
-    const rows = data.response[0]?.league.standings[0] ?? []
-    if (rows.length === 0) return <p className="empty-state">No table listed for {league.name}.</p>
+    // TOTAL is the full table; HOME and AWAY are only home or away games.
+    const rows = data.standings.find((standing) => standing.type === 'TOTAL')?.table ?? []
+    if (rows.length === 0) return <p className="empty-state">No table yet for {competition.name}.</p>
 
     return (
       <table className="standings">
-        <caption className="visually-hidden">
-          {league.name} {SEASON_LABEL} final table
-        </caption>
+        <caption className="visually-hidden">{competition.name} table</caption>
         <thead>
           <tr>
             <th scope="col">
@@ -52,22 +48,22 @@ function StandingsTable({ league, simulateError, onOpenClub }) {
         <tbody>
           {rows.map((row) => (
             <tr key={row.team.id}>
-              <td>{row.rank}</td>
+              <td>{row.position}</td>
               <th scope="row" className="standings__club-col">
                 <button
                   type="button"
                   className="standings__club"
                   onClick={() => onOpenClub({ ...row.team, standing: row })}
                 >
-                  <img className="standings__logo" src={row.team.logo} alt="" loading="lazy" />
-                  <span className="standings__name">{row.team.name}</span>
+                  <img className="standings__logo" src={row.team.crest} alt="" loading="lazy" />
+                  <span className="standings__name">{row.team.shortName ?? row.team.name}</span>
                 </button>
               </th>
-              <td>{row.all.played}</td>
-              <td className="standings__wdl">{row.all.win}</td>
-              <td className="standings__wdl">{row.all.draw}</td>
-              <td className="standings__wdl">{row.all.lose}</td>
-              <td>{formatGoalDiff(row.goalsDiff)}</td>
+              <td>{row.playedGames}</td>
+              <td className="standings__wdl">{row.won}</td>
+              <td className="standings__wdl">{row.draw}</td>
+              <td className="standings__wdl">{row.lost}</td>
+              <td>{formatGoalDiff(row.goalDifference)}</td>
               <td className="standings__points">{row.points}</td>
             </tr>
           ))}

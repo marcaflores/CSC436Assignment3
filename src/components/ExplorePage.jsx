@@ -1,22 +1,14 @@
 import { useEffect, useRef } from 'react'
-import { LEAGUES } from '../api/apiFootball'
+import { COMPETITIONS } from '../api/footballData'
 import ErrorToggle from './ErrorToggle'
 import LeagueView from './LeagueView'
 import ClubView from './ClubView'
-import PlayerView from './PlayerView'
 
-// League → club → player. Where the user is lives in App (`explore`), so it survives a trip to
-// the builder and back. Each step only fetches when it's opened.
-function ExplorePage({
-  explore,
-  onNavigate,
-  squad,
-  onAddPlayer,
-  simulateError,
-  onSimulateErrorChange,
-}) {
-  const { leagueId, club, player } = explore
-  const league = LEAGUES.find((entry) => entry.id === leagueId)
+// League → club, with this season's data from football-data.org. Where the user is lives in App
+// (`explore`), so it survives a trip to the builder and back. Each view only fetches when opened.
+function ExplorePage({ explore, onNavigate, simulateError, onSimulateErrorChange }) {
+  const { code, club } = explore
+  const competition = COMPETITIONS.find((entry) => entry.code === code)
 
   // After the user moves to another view, focus its heading so keyboard and screen reader users
   // land on the new content instead of on a button that just disappeared.
@@ -34,58 +26,19 @@ function ExplorePage({
     onNavigate(next)
   }
 
-  const openLeague = (id) => navigate({ leagueId: id, club: null, player: null })
-  const openClub = (nextClub) => navigate({ leagueId, club: nextClub, player: null })
-  const openPlayer = (nextPlayer) => navigate({ leagueId, club, player: nextPlayer })
-
-  function renderView() {
-    if (club && player) {
-      return (
-        <PlayerView
-          key={player.id}
-          club={club}
-          player={player}
-          simulateError={simulateError}
-          squad={squad}
-          onAddPlayer={onAddPlayer}
-          headingRef={headingRef}
-        />
-      )
-    }
-    if (club) {
-      return (
-        <ClubView
-          key={club.id}
-          club={club}
-          simulateError={simulateError}
-          squad={squad}
-          onAddPlayer={onAddPlayer}
-          onOpenPlayer={openPlayer}
-          headingRef={headingRef}
-        />
-      )
-    }
-    return (
-      <LeagueView
-        key={leagueId}
-        league={league}
-        simulateError={simulateError}
-        onOpenClub={openClub}
-        headingRef={headingRef}
-      />
-    )
-  }
+  const openLeague = (nextCode) => navigate({ code: nextCode, club: null })
+  const openClub = (nextClub) => navigate({ code, club: nextClub })
 
   return (
     <main className="explore">
       <ul className="league-tabs" aria-label="Leagues">
-        {LEAGUES.map((entry) => (
-          <li key={entry.id}>
+        {COMPETITIONS.map((entry) => (
+          <li key={entry.code}>
             <button
               type="button"
               className="league-tabs__button"
-              aria-pressed={entry.id === leagueId}
-              onClick={() => openLeague(entry.id)}
+              aria-pressed={entry.code === code}
+              onClick={() => openLeague(entry.code)}
             >
               {entry.name}
             </button>
@@ -97,29 +50,34 @@ function ExplorePage({
         <nav aria-label="Breadcrumb">
           <ol className="breadcrumbs">
             <li>
-              <button type="button" className="breadcrumbs__link" onClick={() => openLeague(leagueId)}>
-                {league.name}
+              <button type="button" className="breadcrumbs__link" onClick={() => openLeague(code)}>
+                {competition.name}
               </button>
             </li>
             <li>
-              {player ? (
-                <button type="button" className="breadcrumbs__link" onClick={() => openClub(club)}>
-                  {club.name}
-                </button>
-              ) : (
-                <span aria-current="page">{club.name}</span>
-              )}
+              <span aria-current="page">{club.shortName ?? club.name}</span>
             </li>
-            {player && (
-              <li>
-                <span aria-current="page">{player.name}</span>
-              </li>
-            )}
           </ol>
         </nav>
       )}
 
-      {renderView()}
+      {/* key gives each league and club a fresh view, so a club's search box starts empty */}
+      {club ? (
+        <ClubView
+          key={club.id}
+          club={club}
+          simulateError={simulateError}
+          headingRef={headingRef}
+        />
+      ) : (
+        <LeagueView
+          key={code}
+          competition={competition}
+          simulateError={simulateError}
+          onOpenClub={openClub}
+          headingRef={headingRef}
+        />
+      )}
 
       <div className="explore__footer">
         <ErrorToggle checked={simulateError} onChange={onSimulateErrorChange} />

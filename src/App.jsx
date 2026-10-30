@@ -7,10 +7,10 @@ import PlayerList from './components/PlayerList'
 import TeamSelector from './components/TeamSelector'
 import TeamPanel from './components/TeamPanel'
 import { getLineupStats, simulateMatch } from './utils/teamStats'
-import { LEAGUES } from './api/apiFootball'
+import { COMPETITIONS } from './api/footballData'
 import './App.css'
 
-const INITIAL_EXPLORE = { leagueId: LEAGUES[0].id, club: null, player: null }
+const INITIAL_EXPLORE = { code: COMPETITIONS[0].code, club: null }
 
 const INITIAL_TEAMS = {
   team1: { label: 'Team 1', formationKey: '4-3-3', assignments: {} },
@@ -108,8 +108,6 @@ function App() {
         <ExplorePage
           explore={explore}
           onNavigate={setExplore}
-          squad={squad}
-          onAddPlayer={handleAddPlayer}
           simulateError={simulateError}
           onSimulateErrorChange={setSimulateError}
         />

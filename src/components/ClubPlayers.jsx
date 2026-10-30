@@ -1,21 +1,10 @@
 import { useState } from 'react'
 import { useClubSquad } from '../hooks/useClubSquad'
 import { SEASON_LABEL } from '../api/apiFootball'
+import { normalize } from '../utils/normalize'
 import { POSITIONS } from '../data/formations'
 import { FetchError, LoadingRows } from './FetchStatus'
 import ScoutCard from './ScoutCard'
-
-// Letters that aren't a base letter plus an accent, so NFD can't simplify them.
-const SPECIAL_LETTERS = { ø: 'o', æ: 'ae', œ: 'oe', ß: 'ss', ł: 'l', đ: 'd', ı: 'i' }
-
-// Lowercase and strip accents so "martinez" finds "Martínez" and "odegaard" finds "Ødegaard".
-function normalize(text) {
-  return text
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .replace(/[øæœßłđı]/g, (letter) => SPECIAL_LETTERS[letter])
-}
 
 function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
   const [search, setSearch] = useState('')
