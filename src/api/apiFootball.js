@@ -14,12 +14,13 @@ export const SEASON_LABEL = '2024–25'
 // Fallback OVR when a club has no rated players to estimate from. Matches PlayerForm.
 const DEFAULT_RATING = 70
 
+// rounds = league matches per club in a season, used to spot broken top-scorer entries.
 export const LEAGUES = [
-  { id: 39, name: 'Premier League' },
-  { id: 140, name: 'La Liga' },
-  { id: 135, name: 'Serie A' },
-  { id: 78, name: 'Bundesliga' },
-  { id: 61, name: 'Ligue 1' },
+  { id: 39, name: 'Premier League', rounds: 38 },
+  { id: 140, name: 'La Liga', rounds: 38 },
+  { id: 135, name: 'Serie A', rounds: 38 },
+  { id: 78, name: 'Bundesliga', rounds: 34 },
+  { id: 61, name: 'Ligue 1', rounds: 34 },
 ]
 
 export function apiUrl(path, params, { broken = false } = {}) {

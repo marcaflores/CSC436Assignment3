@@ -1,12 +1,16 @@
 import { useState } from 'react'
 import Header from './components/Header'
+import ExplorePage from './components/ExplorePage'
 import ScoutPlayers from './components/ScoutPlayers'
 import PlayerForm from './components/PlayerForm'
 import PlayerList from './components/PlayerList'
 import TeamSelector from './components/TeamSelector'
 import TeamPanel from './components/TeamPanel'
 import { getLineupStats, simulateMatch } from './utils/teamStats'
+import { LEAGUES } from './api/apiFootball'
 import './App.css'
+
+const INITIAL_EXPLORE = { leagueId: LEAGUES[0].id, club: null, player: null }
 
 const INITIAL_TEAMS = {
   team1: { label: 'Team 1', formationKey: '4-3-3', assignments: {} },
@@ -14,6 +18,10 @@ const INITIAL_TEAMS = {
 }
 
 function App() {
+  const [page, setPage] = useState('explore')
+  const [explore, setExplore] = useState(INITIAL_EXPLORE)
+  // One switch for both pages, so the error state is on or off everywhere.
+  const [simulateError, setSimulateError] = useState(false)
   const [squad, setSquad] = useState([])
   const [teams, setTeams] = useState(INITIAL_TEAMS)
   const [viewMode, setViewMode] = useState('team1')
@@ -94,30 +102,46 @@ function App() {
 
   return (
     <div className="app">
-      <Header squadSize={squad.length} />
+      <Header squadSize={squad.length} page={page} onPageChange={setPage} />
 
-      <main className="app-layout">
-        <section className="app-layout__sidebar">
-          <ScoutPlayers squad={squad} onAddPlayer={handleAddPlayer} />
-          <PlayerForm onAddPlayer={handleAddPlayer} />
-        </section>
+      {page === 'explore' ? (
+        <ExplorePage
+          explore={explore}
+          onNavigate={setExplore}
+          squad={squad}
+          onAddPlayer={handleAddPlayer}
+          simulateError={simulateError}
+          onSimulateErrorChange={setSimulateError}
+        />
+      ) : (
+        <main className="app-layout">
+          <section className="app-layout__sidebar">
+            <ScoutPlayers
+              squad={squad}
+              onAddPlayer={handleAddPlayer}
+              simulateError={simulateError}
+              onSimulateErrorChange={setSimulateError}
+            />
+            <PlayerForm onAddPlayer={handleAddPlayer} />
+          </section>
 
-        <section className="app-layout__main">
-          <TeamSelector viewMode={viewMode} onChange={setViewMode} />
+          <section className="app-layout__main">
+            <TeamSelector viewMode={viewMode} onChange={setViewMode} />
 
-          {viewMode === 'both' ? (
-            <div className="teams-grid">
-              {['team1', 'team2'].map(renderTeamPanel)}
-            </div>
-          ) : (
-            renderTeamPanel(viewMode)
-          )}
-        </section>
+            {viewMode === 'both' ? (
+              <div className="teams-grid">
+                {['team1', 'team2'].map(renderTeamPanel)}
+              </div>
+            ) : (
+              renderTeamPanel(viewMode)
+            )}
+          </section>
 
-        <section className="app-layout__squad">
-          <PlayerList players={squad} onRemovePlayer={handleRemovePlayer} />
-        </section>
-      </main>
+          <section className="app-layout__squad">
+            <PlayerList players={squad} onRemovePlayer={handleRemovePlayer} />
+          </section>
+        </main>
+      )}
     </div>
   )
 }

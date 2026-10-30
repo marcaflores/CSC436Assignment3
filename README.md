@@ -4,11 +4,12 @@ Async React project (Project 3) for CSC 436. Built with [Vite](https://vite.dev)
 
 **Live site:** [letsplaysoccer.netlify.app](https://letsplaysoccer.netlify.app/)
 
-Let's Play Soccer is a soccer team builder that uses real players. Pick a league and a club to scout its current squad, add players to your own squad, pick a formation for each of two teams, then click a position on the field to choose from the players who can play it. Once both lineups are full, kick off a simulated match. The team with the higher average rating wins.
+Let's Play Soccer has two pages. **Explore** lets you browse the top five European leagues: each league's 2024–25 table and top scorers, each club's current squad, and each player's 2024–25 stats. **Team Builder** is a soccer team builder that uses those real players: add players to your own squad, pick a formation for each of two teams, then click a position on the field to choose from the players who can play it. Once both lineups are full, kick off a simulated match. The team with the higher average rating wins.
 
 ## Features
 
-- **Real squads:** browse the clubs in the Premier League, La Liga, Serie A, Bundesliga and Ligue 1, and see each club's current squad with player photos and club crests
+- **Explore leagues, clubs and players:** pick a league for its 2024–25 final table and top 10 scorers, a club in the table for its current squad grouped by position, then a player for their age, nationality, height, weight and 2024–25 stats by competition. Add any player to your squad from the club or player page
+- **Real squads in the builder:** browse the clubs in the Premier League, La Liga, Serie A, Bundesliga and Ligue 1, and see each club's current squad with player photos and club crests
 - **Real ratings:** each player's OVR comes from their average match rating in 2024–25. Players who weren't at the club that season, usually new signings, get an estimate marked **est.**: the club's average for their position, a little lower for players under 21. Estimates cost no extra requests
 - **Search and filter:** search a squad by name (accents optional, so "odegaard" finds "Ødegaard") and filter by position. Both work on the squad already loaded, so typing never sends a request
 - **Loading, error and data states:** every request shows a loading skeleton, then either the data or an error message with a **Try again** button
@@ -22,7 +23,7 @@ Let's Play Soccer is a soccer team builder that uses real players. Pick a league
 
 ## Triggering the error state
 
-Check **Simulate API failure** at the bottom of the Scout Players panel. Requests then go to a URL that can't resolve, and the panel shows its error message with a **Try again** button. Uncheck it to load the data again. Going offline and opening a club you haven't opened yet shows the same error with an offline message. Clubs you've already opened load from the cache.
+Check **Simulate API failure** at the bottom of the Explore page, or at the bottom of the Scout Players panel in the Team Builder (it's one setting, shared by both). Requests then go to a URL that can't resolve, and every panel that loads data shows its error message with a **Try again** button. Uncheck it to load the data again. Going offline and opening a club you haven't opened yet shows the same error with an offline message. Clubs you've already opened load from the cache.
 
 ## The API
 
@@ -32,14 +33,19 @@ Check **Simulate API failure** at the bottom of the Scout Players panel. Request
 |---|---|
 | `/teams?league=…&season=2024` | the clubs in a league |
 | `/players/squads?team=…` | a club's current squad, with photos |
-| `/players?team=…&season=2024` | the club's 2024–25 match ratings, which become OVR |
+| `/players?team=…&season=2024` | the club's 2024–25 stats: match ratings (which become OVR) and the player page's stats |
+| `/standings?league=…&season=2024` | a league's 2024–25 final table |
+| `/players/topscorers?league=…&season=2024` | a league's 2024–25 top scorers |
 
 The free plan sets the limits the app works around:
 
-- **Seasons 2022 to 2024 only.** Squads are current, but ratings and the league club lists are from 2024–25.
+- **Seasons 2022 to 2024 only.** Squads are current, but ratings, stats, tables, top scorers and the league club lists are from 2024–25.
 - **100 requests a day.** Successful responses are cached in the browser for 12 hours, so a club you have opened before costs nothing.
+- **What a visit costs.** A league page is 2 requests (table and top scorers). A club is up to 4 (its squad, plus 1 to 3 pages of stats), and it's the same 4 whether you open it in Explore or the builder, so it's only paid once. A player page is free, because its stats are already in the club's response.
 - **10 requests a minute.** The app spaces out its own requests to stay under this. Opening several new clubs quickly makes the next one wait.
 - **Stats pages 1 to 3 only.** Players listed after page 3 of a club's stats get an estimated rating.
+
+One data quirk: the API sometimes merges a player's season with games for a later club (it lists Matheus Cunha with 30 goals in 66 Premier League appearances for Manchester United). Top scorers with more appearances than the league has rounds are left out.
 
 The key ships in the frontend bundle, so anyone can see it in the browser. That's acceptable for a free-tier key on a class project.
 
@@ -72,11 +78,19 @@ Deployed on Netlify. The build settings are in [`netlify.toml`](netlify.toml): b
 
 ```
 src/
-  App.jsx               shared state: squad, teams, view mode, match result
+  App.jsx               shared state: page, explore position, squad, teams, match result
   api/apiFootball.js    API-Football URLs, caching, rate limiting, response shapes
   hooks/useFetch.js     custom hook: data, loading, error and retry for one url
+  hooks/useClubSquad.js custom hook: a club's squad with OVRs, shared by Explore and the builder
   components/
-    Header.jsx          title, squad count, light/dark toggle
+    Header.jsx          title, Explore / Team Builder nav, squad count, light/dark toggle
+    ExplorePage.jsx     league tabs, breadcrumbs, and which view to show
+    LeagueView.jsx      a league's table and top scorers
+    StandingsTable.jsx  2024–25 final table; each club opens its page
+    TopScorers.jsx      2024–25 top 10 scorers
+    ClubView.jsx        a club's current squad grouped by position
+    PlayerView.jsx      one player's profile and 2024–25 stats
+    ErrorToggle.jsx     the Simulate API failure checkbox
     ScoutPlayers.jsx    league picker, club or squad view, simulate-failure toggle
     ClubPicker.jsx      grid of clubs in the chosen league
     ClubPlayers.jsx     a club's squad with search and position filter

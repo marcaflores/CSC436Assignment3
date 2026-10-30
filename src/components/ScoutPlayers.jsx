@@ -2,12 +2,12 @@ import { useState } from 'react'
 import { LEAGUES, SEASON_LABEL } from '../api/apiFootball'
 import ClubPicker from './ClubPicker'
 import ClubPlayers from './ClubPlayers'
+import ErrorToggle from './ErrorToggle'
 
 // Browse real clubs and players from API-Football and add them to the squad.
-function ScoutPlayers({ squad, onAddPlayer }) {
+function ScoutPlayers({ squad, onAddPlayer, simulateError, onSimulateErrorChange }) {
   const [leagueId, setLeagueId] = useState(LEAGUES[0].id)
   const [club, setClub] = useState(null)
-  const [simulateError, setSimulateError] = useState(false)
 
   function handleLeagueChange(event) {
     setLeagueId(Number(event.target.value))
@@ -57,17 +57,7 @@ function ScoutPlayers({ squad, onAddPlayer }) {
         <ClubPicker leagueId={leagueId} simulateError={simulateError} onSelect={setClub} />
       )}
 
-      <label className="error-toggle">
-        <input
-          type="checkbox"
-          checked={simulateError}
-          onChange={(event) => setSimulateError(event.target.checked)}
-        />
-        <span>
-          Simulate API failure
-          <span className="error-toggle__hint">Sends requests to a broken URL to show the error state.</span>
-        </span>
-      </label>
+      <ErrorToggle checked={simulateError} onChange={onSimulateErrorChange} />
     </div>
   )
 }

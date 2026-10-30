@@ -1,14 +1,6 @@
-import { useMemo, useState } from 'react'
-import { useFetch } from '../hooks/useFetch'
-import {
-  apiUrl,
-  fetchAllPages,
-  fetchApiFootball,
-  SEASON,
-  SEASON_LABEL,
-  toRatingsById,
-  toSquadPlayers,
-} from '../api/apiFootball'
+import { useState } from 'react'
+import { useClubSquad } from '../hooks/useClubSquad'
+import { SEASON_LABEL } from '../api/apiFootball'
 import { POSITIONS } from '../data/formations'
 import { FetchError, LoadingRows } from './FetchStatus'
 import ScoutCard from './ScoutCard'
@@ -29,27 +21,7 @@ function ClubPlayers({ club, simulateError, squad, onAddPlayer }) {
   const [search, setSearch] = useState('')
   const [positionFilter, setPositionFilter] = useState('ALL')
 
-  // Two requests: who is in the squad now, and how they rated last season.
-  const squadUrl = apiUrl('/players/squads', { team: club.id }, { broken: simulateError })
-  const statsUrl = apiUrl('/players', { team: club.id, season: SEASON }, { broken: simulateError })
-  const squadRequest = useFetch(squadUrl, fetchApiFootball)
-  const statsRequest = useFetch(statsUrl, fetchAllPages)
-
-  const loading = squadRequest.loading || statsRequest.loading
-  const error = squadRequest.error || statsRequest.error
-
-  function retry() {
-    // Only the request that failed refetches; the other comes straight from the cache.
-    squadRequest.retry()
-    statsRequest.retry()
-  }
-
-  const players = useMemo(() => {
-    if (!squadRequest.data || !statsRequest.data) return []
-    const ratingsById = toRatingsById(statsRequest.data.response)
-    const squadPlayers = squadRequest.data.response[0]?.players ?? []
-    return toSquadPlayers(squadPlayers, club, ratingsById)
-  }, [squadRequest.data, statsRequest.data, club])
+  const { players, loading, error, retry } = useClubSquad(club, simulateError)
 
   // Searching and filtering only narrow the squad already fetched, so typing never sends a request.
   const query = normalize(search.trim())

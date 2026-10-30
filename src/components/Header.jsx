@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react'
 
-function Header({ squadSize }) {
+const PAGES = [
+  { id: 'explore', label: 'Explore', tagline: 'Explore leagues, clubs and players.' },
+  { id: 'builder', label: 'Team Builder', tagline: 'Build your squad, pick a formation, set the lineup.' },
+]
+
+function Header({ squadSize, page, onPageChange }) {
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme ?? 'light')
   const isDark = theme === 'dark'
 
@@ -19,9 +24,25 @@ function Header({ squadSize }) {
         <span className="app-header__crest" aria-hidden="true">⚽</span>
         <div>
           <h1>Let's Play Soccer</h1>
-          <p>Build your squad, pick a formation, set the lineup.</p>
+          <p>{PAGES.find((entry) => entry.id === page).tagline}</p>
         </div>
       </div>
+      <nav className="app-nav" aria-label="Main">
+        <ul className="app-nav__list">
+          {PAGES.map((entry) => (
+            <li key={entry.id}>
+              <button
+                type="button"
+                className="app-nav__link"
+                aria-current={entry.id === page ? 'page' : undefined}
+                onClick={() => onPageChange(entry.id)}
+              >
+                {entry.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </nav>
       <div className="app-header__actions">
         <button
           type="button"
