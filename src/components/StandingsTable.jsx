@@ -56,7 +56,9 @@ function StandingsTable({ competition, standings, onOpenClub }) {
           <tbody>
             {rows.map((row) => (
               <tr key={row.team.id}>
-                <td>{row.position}</td>
+                <td>
+                  <span className="standings__rank">{row.position}</span>
+                </td>
                 <th scope="row" className="standings__club-col">
                   <button
                     type="button"

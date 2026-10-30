@@ -49,11 +49,16 @@ function LeagueView({ competition, seasonYear, onSeasonChange, simulateError, on
   return (
     <section className="explore-view" aria-labelledby="explore-heading">
       <div className="explore-view__intro explore-view__intro--league">
-        <div>
-          <h2 id="explore-heading" className="explore-view__title" ref={headingRef} tabIndex={-1}>
-            {competition.name}
-          </h2>
-          <p className="explore-view__subtitle">{describeSeason()} · pick a club to see more</p>
+        <div className="explore-view__heading">
+          <span className="explore-view__emblem">
+            <img src={competition.emblem} alt="" />
+          </span>
+          <div>
+            <h2 id="explore-heading" className="explore-view__title" ref={headingRef} tabIndex={-1}>
+              {competition.name}
+            </h2>
+            <p className="explore-view__subtitle">{describeSeason()} · pick a club to see more</p>
+          </div>
         </div>
         <select
           className="filter-select"

@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Header from './components/Header'
 import ExplorePage from './components/ExplorePage'
 import SchedulePage from './components/SchedulePage'
+import PageHero from './components/PageHero'
 import ScoutPlayers from './components/ScoutPlayers'
 import PlayerForm from './components/PlayerForm'
 import PlayerList from './components/PlayerList'
@@ -9,6 +10,7 @@ import TeamSelector from './components/TeamSelector'
 import TeamPanel from './components/TeamPanel'
 import { getLineupStats, simulateMatch } from './utils/teamStats'
 import { COMPETITIONS } from './api/footballData'
+import { pageFromHash } from './data/pages'
 import './App.css'
 
 const INITIAL_EXPLORE = { code: COMPETITIONS[0].code, season: null, club: null }
@@ -21,7 +23,19 @@ const INITIAL_TEAMS = {
 }
 
 function App() {
-  const [page, setPage] = useState('explore')
+  // The page lives in the URL hash (#explore, #schedule, #builder), so the back button and
+  // shared links work. Clicking a nav link changes the hash, and this listener follows it.
+  const [page, setPage] = useState(pageFromHash)
+
+  useEffect(() => {
+    function handleHashChange() {
+      setPage(pageFromHash())
+      window.scrollTo(0, 0)
+    }
+    window.addEventListener('hashchange', handleHashChange)
+    return () => window.removeEventListener('hashchange', handleHashChange)
+  }, [])
+
   const [explore, setExplore] = useState(INITIAL_EXPLORE)
   const [schedule, setSchedule] = useState(INITIAL_SCHEDULE)
   // One switch for every page, so the error state is on or off everywhere.
@@ -106,7 +120,7 @@ function App() {
 
   return (
     <div className="app">
-      <Header squadSize={squad.length} page={page} onPageChange={setPage} />
+      <Header squadSize={squad.length} page={page} />
 
       {page === 'explore' && (
         <ExplorePage
@@ -127,32 +141,35 @@ function App() {
       )}
 
       {page === 'builder' && (
-        <main className="app-layout">
-          <section className="app-layout__sidebar">
-            <ScoutPlayers
-              squad={squad}
-              onAddPlayer={handleAddPlayer}
-              simulateError={simulateError}
-              onSimulateErrorChange={setSimulateError}
-            />
-            <PlayerForm onAddPlayer={handleAddPlayer} />
-          </section>
+        <main className="page page--wide">
+          <PageHero pageId="builder" />
+          <div className="app-layout">
+            <section className="app-layout__sidebar">
+              <ScoutPlayers
+                squad={squad}
+                onAddPlayer={handleAddPlayer}
+                simulateError={simulateError}
+                onSimulateErrorChange={setSimulateError}
+              />
+              <PlayerForm onAddPlayer={handleAddPlayer} />
+            </section>
 
-          <section className="app-layout__main">
-            <TeamSelector viewMode={viewMode} onChange={setViewMode} />
+            <section className="app-layout__main">
+              <TeamSelector viewMode={viewMode} onChange={setViewMode} />
 
-            {viewMode === 'both' ? (
-              <div className="teams-grid">
-                {['team1', 'team2'].map(renderTeamPanel)}
-              </div>
-            ) : (
-              renderTeamPanel(viewMode)
-            )}
-          </section>
+              {viewMode === 'both' ? (
+                <div className="teams-grid">
+                  {['team1', 'team2'].map(renderTeamPanel)}
+                </div>
+              ) : (
+                renderTeamPanel(viewMode)
+              )}
+            </section>
 
-          <section className="app-layout__squad">
-            <PlayerList players={squad} onRemovePlayer={handleRemovePlayer} />
-          </section>
+            <section className="app-layout__squad">
+              <PlayerList players={squad} onRemovePlayer={handleRemovePlayer} />
+            </section>
+          </div>
         </main>
       )}
     </div>

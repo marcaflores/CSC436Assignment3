@@ -24,7 +24,7 @@ function MatchList({ matches, showDate = true, showCompetition = false }) {
   return (
     <ul className="match-list">
       {matches.map((match) => (
-        <li key={match.id} className="match">
+        <li key={match.id} className={`match ${LIVE.includes(match.status) ? 'match--live' : ''}`}>
           {(showDate || showCompetition) && (
             <p className="match__meta">
               {showDate && (

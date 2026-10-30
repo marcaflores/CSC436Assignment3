@@ -3,6 +3,8 @@ import { COMPETITIONS, fetchFootballData, footballDataUrl } from '../api/footbal
 import { addDays, formatLongDate, todayKey, toDateKey } from '../utils/dates'
 import { FetchError, LoadingRows } from './FetchStatus'
 import ErrorToggle from './ErrorToggle'
+import Icon from './Icon'
+import PageHero from './PageHero'
 import MatchList from './MatchList'
 
 const COMPETITION_CODES = COMPETITIONS.map((competition) => competition.code).join(',')
@@ -53,7 +55,7 @@ function SchedulePage({ schedule, onScheduleChange, simulateError, onSimulateErr
     return visibleGroups.map((group) => (
       <section key={group.code} className="explore-panel" aria-labelledby={`schedule-${group.code}`}>
         <h3 id={`schedule-${group.code}`} className="explore-panel__title schedule__competition">
-          <img className="schedule__emblem" src={group.matches[0].competition.emblem} alt="" />
+          <img className="schedule__emblem" src={group.emblem} alt="" />
           {group.name}
           <span className="explore-panel__count">{group.matches.length}</span>
         </h3>
@@ -63,78 +65,82 @@ function SchedulePage({ schedule, onScheduleChange, simulateError, onSimulateErr
   }
 
   return (
-    <main className="explore schedule">
-      <div className="schedule__days">
-        <ul className="league-tabs" aria-label="Quick days">
-          {quickDays.map((day) => (
-            <li key={day.label}>
-              <button
-                type="button"
-                className="league-tabs__button"
-                aria-pressed={day.date === date}
-                onClick={() => goTo(day.date)}
-              >
-                {day.label}
-              </button>
-            </li>
-          ))}
-        </ul>
-        <div className="schedule__picker">
-          <button
-            type="button"
-            className="icon-button schedule__step"
-            aria-label="Previous day"
-            onClick={() => goTo(addDays(date, -1))}
-          >
-            ‹
-          </button>
-          <input
-            type="date"
-            className="filter-input"
-            value={date}
-            onChange={(event) => event.target.value && goTo(event.target.value)}
-            aria-label="Pick a date"
-          />
-          <button
-            type="button"
-            className="icon-button schedule__step"
-            aria-label="Next day"
-            onClick={() => goTo(addDays(date, 1))}
-          >
-            ›
-          </button>
+    <main className="page schedule">
+      <PageHero pageId="schedule">
+        <div className="schedule__days">
+          <ul className="league-tabs" aria-label="Quick days">
+            {quickDays.map((day) => (
+              <li key={day.label}>
+                <button
+                  type="button"
+                  className="league-tabs__button"
+                  aria-pressed={day.date === date}
+                  onClick={() => goTo(day.date)}
+                >
+                  {day.label}
+                </button>
+              </li>
+            ))}
+          </ul>
+          <div className="schedule__picker">
+            <button
+              type="button"
+              className="icon-button schedule__step"
+              aria-label="Previous day"
+              onClick={() => goTo(addDays(date, -1))}
+            >
+              <Icon name="chevronLeft" />
+            </button>
+            <input
+              type="date"
+              className="filter-input"
+              value={date}
+              onChange={(event) => event.target.value && goTo(event.target.value)}
+              aria-label="Pick a date"
+            />
+            <button
+              type="button"
+              className="icon-button schedule__step"
+              aria-label="Next day"
+              onClick={() => goTo(addDays(date, 1))}
+            >
+              <Icon name="chevronRight" />
+            </button>
+          </div>
         </div>
-      </div>
+      </PageHero>
 
-      <div className="explore-view__intro schedule__intro">
-        <div>
-          <h2 className="explore-view__title">{formatLongDate(date)}</h2>
-          <p className="explore-view__subtitle">
-            {loading || error
-              ? 'Games in the top five leagues and the Champions League'
-              : `${dayMatches.length} ${dayMatches.length === 1 ? 'game' : 'games'} · times in your time zone`}
-          </p>
+      <div className="page__body">
+        <div className="explore-view__intro schedule__intro">
+          <div>
+            <h2 className="explore-view__title">{formatLongDate(date)}</h2>
+            <p className="explore-view__subtitle">
+              {loading || error
+                ? 'Games in the top five leagues and the Champions League'
+                : `${dayMatches.length} ${dayMatches.length === 1 ? 'game' : 'games'} · times in your time zone`}
+            </p>
+          </div>
+          <select
+            className="filter-select"
+            value={competition}
+            onChange={(event) => onScheduleChange({ ...schedule, competition: event.target.value })}
+            aria-label="Competition"
+          >
+            <option value="ALL">All competitions</option>
+            {COMPETITIONS.map((entry) => (
+              <option key={entry.code} value={entry.code}>
+                {entry.name}
+                {data ? ` (${groups.find((group) => group.code === entry.code)?.matches.length ?? 0})` : ''}
+              </option>
+            ))}
+          </select>
         </div>
-        <select
-          className="filter-select"
-          value={competition}
-          onChange={(event) => onScheduleChange({ ...schedule, competition: event.target.value })}
-          aria-label="Competition"
-        >
-          <option value="ALL">All competitions</option>
-          {COMPETITIONS.map((entry) => (
-            <option key={entry.code} value={entry.code}>
-              {entry.name}
-              {data ? ` (${groups.find((group) => group.code === entry.code)?.matches.length ?? 0})` : ''}
-            </option>
-          ))}
-        </select>
-      </div>
 
-      <div className="schedule__groups">{renderGames()}</div>
+        <div className="schedule__groups">{renderGames()}</div>
 
-      <div className="explore__footer">
-        <ErrorToggle checked={simulateError} onChange={onSimulateErrorChange} />
+        <div className="page__footer">
+          <ErrorToggle checked={simulateError} onChange={onSimulateErrorChange} />
+        </div>
       </div>
     </main>
   )

@@ -21,8 +21,10 @@ Let's Play Soccer has three pages. **Explore** covers the top five European leag
 - **Formations:** 4-3-3, 4-4-2 and 3-5-2, each laid out on the field
 - **Position picker:** clicking a slot lists only the available players for that position, best rating first
 - **Match simulator:** the higher average rating wins, and a bigger rating gap means a bigger winning margin
+- **Navigation:** a sticky top bar on desktop, and a tab bar fixed to the bottom of the screen on phones and tablets. Each page has its own link (`#explore`, `#schedule`, `#builder`), so the browser's back button works and links can be shared
 - **Light and dark mode:** follows your system setting, and the toggle in the header remembers your choice
-- **Responsive layout:** stacked on phones, with more columns on tablets and desktops
+- **Responsive layout:** mobile-first, stacked on phones, with more columns on tablets and desktops. Tested at 320, 375, 768 and 1280px with no sideways scrolling
+- **Accessible:** SVG icons instead of emoji, visible keyboard focus, position badges with 4.5:1 text contrast, and focus moves to the new heading when you open a league or club
 
 ## Triggering the error state
 
@@ -115,6 +117,8 @@ src/
   hooks/useFetch.js     custom hook: data, loading, error and retry for one url
   hooks/useClubSquad.js custom hook: a club's squad with OVRs (two requests combined)
   components/
+    Icon.jsx            the SVG icon set (compass, calendar, shirt, sun, moon…)
+    PageHero.jsx        the coloured band at the top of each page
     Header.jsx          title, Explore / Schedule / Team Builder nav, squad count, light/dark toggle
     ExplorePage.jsx     league tabs, breadcrumbs, and which view to show
     LeagueView.jsx      a league's season picker, table, matchday and top scorers
@@ -142,6 +146,7 @@ src/
     SlotPicker.jsx      list of players for a clicked position
     TeamSummary.jsx     lineup stats, kick off button, match result
   data/formations.js    formation layouts
+  data/pages.js         the three pages and their #hash links
   utils/dates.js        local "YYYY-MM-DD" days for the Schedule page
   utils/normalize.js    accent-insensitive text for search
   utils/teamStats.js    lineup averages and match scoring

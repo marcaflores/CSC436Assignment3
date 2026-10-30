@@ -17,8 +17,9 @@ function TopScorers({ competition, seasonParams, simulateError }) {
 
     return (
       <ol className="scorers">
-        {data.scorers.map(({ player, team, goals, assists, playedMatches }) => (
+        {data.scorers.map(({ player, team, goals, assists, playedMatches }, index) => (
           <li key={player.id} className="scorers__row">
+            <span className="scorers__rank">{index + 1}</span>
             <img className="scorers__crest" src={team.crest} alt="" loading="lazy" />
             <div className="scorers__info">
               <p className="scorers__name">{player.name}</p>

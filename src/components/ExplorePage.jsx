@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react'
 import { COMPETITIONS, yearLabel } from '../api/footballData'
 import ErrorToggle from './ErrorToggle'
+import Icon from './Icon'
+import PageHero from './PageHero'
 import LeagueView from './LeagueView'
 import ClubView from './ClubView'
 
@@ -33,60 +35,68 @@ function ExplorePage({ explore, onNavigate, simulateError, onSimulateErrorChange
   const openClub = (nextClub) => navigate({ code, season, club: nextClub })
 
   return (
-    <main className="explore">
-      <ul className="league-tabs" aria-label="Leagues">
-        {COMPETITIONS.map((entry) => (
-          <li key={entry.code}>
-            <button
-              type="button"
-              className="league-tabs__button"
-              aria-pressed={entry.code === code}
-              onClick={() => openLeague(entry.code)}
-            >
-              {entry.name}
-            </button>
-          </li>
-        ))}
-      </ul>
-
-      {club && (
-        <nav aria-label="Breadcrumb">
-          <ol className="breadcrumbs">
-            <li>
-              <button type="button" className="breadcrumbs__link" onClick={() => openLeague(code)}>
-                {competition.name}
-                {season ? ` ${yearLabel(season)}` : ''}
+    <main className="page">
+      <PageHero pageId="explore">
+        <ul className="league-tabs" aria-label="Competitions">
+          {COMPETITIONS.map((entry) => (
+            <li key={entry.code}>
+              <button
+                type="button"
+                className="league-tabs__button"
+                aria-pressed={entry.code === code}
+                onClick={() => openLeague(entry.code)}
+              >
+                <span className="league-tabs__emblem">
+                  <img src={entry.emblem} alt="" />
+                </span>
+                {entry.name}
               </button>
             </li>
-            <li>
-              <span aria-current="page">{club.shortName ?? club.name}</span>
-            </li>
-          </ol>
-        </nav>
-      )}
+          ))}
+        </ul>
+      </PageHero>
 
-      {/* key gives each league and club a fresh view, so a club's search box starts empty */}
-      {club ? (
-        <ClubView
-          key={club.id}
-          club={club}
-          simulateError={simulateError}
-          headingRef={headingRef}
-        />
-      ) : (
-        <LeagueView
-          key={`${code}-${season}`}
-          competition={competition}
-          seasonYear={season}
-          onSeasonChange={changeSeason}
-          simulateError={simulateError}
-          onOpenClub={openClub}
-          headingRef={headingRef}
-        />
-      )}
+      <div className="page__body">
+        {club && (
+          <nav aria-label="Breadcrumb">
+            <ol className="breadcrumbs">
+              <li>
+                <button type="button" className="breadcrumbs__link" onClick={() => openLeague(code)}>
+                  <Icon name="chevronLeft" size={16} />
+                  {competition.name}
+                  {season ? ` ${yearLabel(season)}` : ''}
+                </button>
+              </li>
+              <li>
+                <span aria-current="page">{club.shortName ?? club.name}</span>
+              </li>
+            </ol>
+          </nav>
+        )}
 
-      <div className="explore__footer">
-        <ErrorToggle checked={simulateError} onChange={onSimulateErrorChange} />
+        {/* key gives each league and club a fresh view, so a club's search box starts empty */}
+        {club ? (
+          <ClubView
+            key={club.id}
+            club={club}
+            simulateError={simulateError}
+            headingRef={headingRef}
+          />
+        ) : (
+          <LeagueView
+            key={`${code}-${season}`}
+            competition={competition}
+            seasonYear={season}
+            onSeasonChange={changeSeason}
+            simulateError={simulateError}
+            onOpenClub={openClub}
+            headingRef={headingRef}
+          />
+        )}
+
+        <div className="page__footer">
+          <ErrorToggle checked={simulateError} onChange={onSimulateErrorChange} />
+        </div>
       </div>
     </main>
   )

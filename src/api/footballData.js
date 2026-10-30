@@ -7,13 +7,15 @@ import { createFetcher } from './createFetcher'
 const BASE_URL = '/api/football-data'
 const BROKEN_BASE_URL = 'https://football-data.invalid'
 
+const EMBLEM_URL = 'https://crests.football-data.org'
+
 export const COMPETITIONS = [
-  { code: 'PL', name: 'Premier League' },
-  { code: 'PD', name: 'La Liga' },
-  { code: 'SA', name: 'Serie A' },
-  { code: 'BL1', name: 'Bundesliga' },
-  { code: 'FL1', name: 'Ligue 1' },
-  { code: 'CL', name: 'Champions League' },
+  { code: 'PL', name: 'Premier League', emblem: `${EMBLEM_URL}/PL.png` },
+  { code: 'PD', name: 'La Liga', emblem: `${EMBLEM_URL}/PD.png` },
+  { code: 'SA', name: 'Serie A', emblem: `${EMBLEM_URL}/SA.png` },
+  { code: 'BL1', name: 'Bundesliga', emblem: `${EMBLEM_URL}/BL1.png` },
+  { code: 'FL1', name: 'Ligue 1', emblem: `${EMBLEM_URL}/FL1.png` },
+  { code: 'CL', name: 'Champions League', emblem: `${EMBLEM_URL}/CL.png` },
 ]
 
 export function footballDataUrl(path, params = {}, { broken = false } = {}) {

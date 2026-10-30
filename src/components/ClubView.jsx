@@ -10,6 +10,7 @@ import {
 import { normalize } from '../utils/normalize'
 import { FetchError, LoadingRows } from './FetchStatus'
 import MatchList from './MatchList'
+import PlayerAvatar from './PlayerAvatar'
 
 const RECENT_COUNT = 5
 const UPCOMING_COUNT = 3
@@ -129,12 +130,16 @@ function ClubView({ club, simulateError, headingRef }) {
                     const age = ageFrom(player.dateOfBirth)
                     return (
                       <li key={player.id} className="club-squad__row">
-                        <p className="club-squad__name">{player.name}</p>
-                        <p className="club-squad__meta">
-                          {[age && `${age} yrs`, player.nationality]
-                            .filter(Boolean)
-                            .join(' · ')}
-                        </p>
+                        {/* No photos on football-data.org, so this shows initials. */}
+                        <PlayerAvatar player={player} size="sm" />
+                        <div className="club-squad__info">
+                          <p className="club-squad__name">{player.name}</p>
+                          <p className="club-squad__meta">
+                            {[age && `${age} yrs`, player.nationality]
+                              .filter(Boolean)
+                              .join(' · ')}
+                          </p>
+                        </div>
                       </li>
                     )
                   })}
@@ -151,21 +156,47 @@ function ClubView({ club, simulateError, headingRef }) {
 
   return (
     <section className="explore-view" aria-labelledby="explore-heading">
-      <div className="explore-view__intro explore-view__intro--club">
-        <img className="explore-view__logo" src={club.crest} alt="" />
-        <div>
-          <h2 id="explore-heading" className="explore-view__title" ref={headingRef} tabIndex={-1}>
-            {name}
-          </h2>
-          <p className="explore-view__subtitle">
-            {isPastSeason ? 'Finished ' : ''}
-            {ordinal(standing.position)} in {seasonLabel(season)} · {standing.points} pts ·{' '}
-            {standing.won}W {standing.draw}D {standing.lost}L
-          </p>
+      <div className="club-hero">
+        <div className="explore-view__heading">
+          <span className="explore-view__emblem explore-view__emblem--club">
+            <img src={club.crest} alt="" />
+          </span>
+          <div>
+            <h2 id="explore-heading" className="explore-view__title" ref={headingRef} tabIndex={-1}>
+              {name}
+            </h2>
+            <p className="explore-view__subtitle">
+              {isPastSeason ? 'Finished ' : ''}
+              {ordinal(standing.position)} in {seasonLabel(season)}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {renderInfo()}
+        <dl className="stat-strip">
+          <div>
+            <dt>Position</dt>
+            <dd>{ordinal(standing.position)}</dd>
+          </div>
+          <div>
+            <dt>Points</dt>
+            <dd>{standing.points}</dd>
+          </div>
+          <div>
+            <dt>Record</dt>
+            <dd>
+              {standing.won}-{standing.draw}-{standing.lost}
+            </dd>
+          </div>
+          <div>
+            <dt>Goals</dt>
+            <dd>
+              {standing.goalsFor}:{standing.goalsAgainst}
+            </dd>
+          </div>
+        </dl>
+
+        {renderInfo()}
+      </div>
 
       <div className="club-view">
         <div className="explore-panel">
