@@ -125,7 +125,7 @@ function ClubView({ club, simulateError, headingRef }) {
                       <li key={player.id} className="club-squad__row">
                         <p className="club-squad__name">{player.name}</p>
                         <p className="club-squad__meta">
-                          {[player.position, age && `${age} yrs`, player.nationality]
+                          {[age && `${age} yrs`, player.nationality]
                             .filter(Boolean)
                             .join(' · ')}
                         </p>

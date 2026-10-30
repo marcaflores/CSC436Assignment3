@@ -1,17 +1,18 @@
 # Let's Play Soccer
 
-Async React project (Project 3) for CSC 436. Built with [Vite](https://vite.dev) + React, using data from [API-Football](https://www.api-football.com/).
+Async React project (Project 3) for CSC 436. Built with [Vite](https://vite.dev) + React, using data from two APIs: [football-data.org](https://www.football-data.org/) and [API-Football](https://www.api-football.com/).
 
 **Live site:** [letsplaysoccer.netlify.app](https://letsplaysoccer.netlify.app/)
 
-Let's Play Soccer has two pages. **Explore** lets you browse the top five European leagues: each league's 2024–25 table and top scorers, each club's current squad, and each player's 2024–25 stats. **Team Builder** is a soccer team builder that uses those real players: add players to your own squad, pick a formation for each of two teams, then click a position on the field to choose from the players who can play it. Once both lineups are full, kick off a simulated match. The team with the higher average rating wins.
+Let's Play Soccer has two pages. **Explore** follows the top five European leagues this season: each league's table, this matchday's results and fixtures, and top scorers, then each club's recent results, next games and current squad. **Team Builder** is a soccer team builder that uses real players: scout a club's squad with photos and ratings, add players to your own squad, pick a formation for each of two teams, then click a position on the field to choose from the players who can play it. Once both lineups are full, kick off a simulated match. The team with the higher average rating wins.
 
 ## Features
 
-- **Explore leagues, clubs and players:** pick a league for its 2024–25 final table and top 10 scorers, a club in the table for its current squad grouped by position, then a player for their age, nationality, height, weight and 2024–25 stats by competition. Add any player to your squad from the club or player page
-- **Real squads in the builder:** browse the clubs in the Premier League, La Liga, Serie A, Bundesliga and Ligue 1, and see each club's current squad with player photos and club crests
+- **League pages (Explore):** the Premier League, La Liga, Serie A, Bundesliga and Ligue 1, each with the current table, the current matchday's games (scores for finished and live games, kick-off times in your time zone for the rest) and the top 10 scorers
+- **Club pages (Explore):** click a club in the table for its coach, stadium, founding year and colours, its place in the table, its last 5 results and next 3 games in every competition, and its current squad grouped by position with age and nationality
+- **Real squads in the builder:** browse the same five leagues and see each club's current squad with player photos and club crests
 - **Real ratings:** each player's OVR comes from their average match rating in 2024–25. Players who weren't at the club that season, usually new signings, get an estimate marked **est.**: the club's average for their position, a little lower for players under 21. Estimates cost no extra requests
-- **Search and filter:** search a squad by name (accents optional, so "odegaard" finds "Ødegaard") and filter by position. Both work on the squad already loaded, so typing never sends a request
+- **Search and filter:** search a club's squad by name on both pages (accents optional, so "odegaard" finds "Ødegaard"), and filter by position in the builder. Both work on the squad already loaded, so typing never sends a request
 - **Loading, error and data states:** every request shows a loading skeleton, then either the data or an error message with a **Try again** button
 - **Custom players:** create your own players with a name, position and rating
 - **Two teams:** view Team 1, Team 2 or both side by side. A player can only be in one lineup at a time
@@ -19,46 +20,63 @@ Let's Play Soccer has two pages. **Explore** lets you browse the top five Europe
 - **Position picker:** clicking a slot lists only the available players for that position, best rating first
 - **Match simulator:** the higher average rating wins, and a bigger rating gap means a bigger winning margin
 - **Light and dark mode:** follows your system setting, and the toggle in the header remembers your choice
-- **Responsive layout:** stacked on phones, two columns on tablets, and three columns on desktop
+- **Responsive layout:** stacked on phones, with more columns on tablets and desktops
 
 ## Triggering the error state
 
-Check **Simulate API failure** at the bottom of the Explore page, or at the bottom of the Scout Players panel in the Team Builder (it's one setting, shared by both). Requests then go to a URL that can't resolve, and every panel that loads data shows its error message with a **Try again** button. Uncheck it to load the data again. Going offline and opening a club you haven't opened yet shows the same error with an offline message. Clubs you've already opened load from the cache.
+Check **Simulate API failure** at the bottom of the Explore page, or at the bottom of the Scout Players panel in the Team Builder (it's one setting, shared by both). Requests then go to a URL that can't resolve, and every panel that loads data shows its error message with a **Try again** button. Uncheck it to load the data again. Going offline and opening something you haven't opened yet shows the same error with an offline message.
 
-## The API
+## The APIs
 
-[API-Football](https://www.api-football.com/documentation-v3) (v3), free plan, authenticated with an API key in the `x-apisports-key` header.
+Each API does what the other can't on its free plan. football-data.org has the current season but no player photos or ratings. API-Football has photos and ratings but only seasons up to 2024–25.
+
+### football-data.org (Explore)
+
+[football-data.org](https://docs.football-data.org/) v4, free plan, authenticated with an API key in the `X-Auth-Token` header.
+
+| Endpoint | Used for |
+|---|---|
+| `/competitions/{code}/standings` | a league's current table, and which matchday it's on |
+| `/competitions/{code}/matches?matchday=…` | that matchday's games. Waits for the table, which says which matchday it is |
+| `/competitions/{code}/scorers?limit=10` | a league's top scorers |
+| `/teams/{id}` | a club's info and current squad |
+| `/teams/{id}/matches?season=…` | a club's games this season, in every competition |
+
+- **No browser requests.** football-data.org doesn't send CORS headers, so the app calls it through a proxy at `/api/football-data/*`, which adds the key. On Netlify that's [`netlify/functions/football-data.mjs`](netlify/functions/football-data.mjs). Locally, it's the dev server proxy in [`vite.config.js`](vite.config.js). Either way, this key never reaches the browser.
+- **10 requests a minute, no daily cap.** Responses are cached in the browser for 10 minutes, so scores stay fresh. A league page is 3 requests, and a club page is 2.
+- **Free plan gaps.** Assists aren't included, so top scorers show goals and games only.
+
+### API-Football (Team Builder)
+
+[API-Football](https://www.api-football.com/documentation-v3) v3, free plan, authenticated with an API key in the `x-apisports-key` header.
 
 | Endpoint | Used for |
 |---|---|
 | `/teams?league=…&season=2024` | the clubs in a league |
 | `/players/squads?team=…` | a club's current squad, with photos |
-| `/players?team=…&season=2024` | the club's 2024–25 stats: match ratings (which become OVR) and the player page's stats |
-| `/standings?league=…&season=2024` | a league's 2024–25 final table |
-| `/players/topscorers?league=…&season=2024` | a league's 2024–25 top scorers |
+| `/players?team=…&season=2024` | the club's 2024–25 match ratings, which become OVR |
 
-The free plan sets the limits the app works around:
-
-- **Seasons 2022 to 2024 only.** Squads are current, but ratings, stats, tables, top scorers and the league club lists are from 2024–25.
-- **100 requests a day.** Successful responses are cached in the browser for 12 hours, so a club you have opened before costs nothing.
-- **What a visit costs.** A league page is 2 requests (table and top scorers). A club is up to 4 (its squad, plus 1 to 3 pages of stats), and it's the same 4 whether you open it in Explore or the builder, so it's only paid once. A player page is free, because its stats are already in the club's response.
+- **Seasons 2022 to 2024 only.** Squads are current, but ratings and the league club lists are from 2024–25.
+- **100 requests a day.** Successful responses are cached in the browser for 12 hours, so a club you've opened before costs nothing. A club costs up to 4 requests: its squad, plus 1 to 3 pages of stats.
 - **10 requests a minute.** The app spaces out its own requests to stay under this. Opening several new clubs quickly makes the next one wait.
 - **Stats pages 1 to 3 only.** Players listed after page 3 of a club's stats get an estimated rating.
+- **The key is public.** API-Football allows browser requests, so this key ships in the frontend bundle and anyone can see it. That's acceptable for a free-tier key on a class project.
 
-One data quirk: the API sometimes merges a player's season with games for a later club (it lists Matheus Cunha with 30 goals in 66 Premier League appearances for Manchester United). Top scorers with more appearances than the league has rounds are left out.
-
-The key ships in the frontend bundle, so anyone can see it in the browser. That's acceptable for a free-tier key on a class project.
+Both APIs share one fetch helper ([`src/api/createFetcher.js`](src/api/createFetcher.js)): a localStorage cache, pacing under the per-minute limit, and sharing of identical requests already in flight. That last part stops React's development double-render from spending two requests.
 
 ## Run it locally
 
-Requires [Node.js](https://nodejs.org) 20.19 or newer and a free API-Football key from the [dashboard](https://dashboard.api-football.com/).
+Requires [Node.js](https://nodejs.org) 20.19 or newer and two free API keys: one from [football-data.org](https://www.football-data.org/client/register) and one from the [API-Football dashboard](https://dashboard.api-football.com/).
 
 Create a `.env` file in the project root (it's listed in `.gitignore`, so it's never committed):
 
 ```bash
-VITE_API_FOOTBALL_KEY=your-key-here
+VITE_API_FOOTBALL_KEY=your-api-football-key
 VITE_API_FOOTBALL_URL=https://v3.football.api-sports.io
+FOOTBALL_DATA_KEY=your-football-data-key
 ```
+
+`FOOTBALL_DATA_KEY` has no `VITE_` prefix on purpose: only the dev server and the Netlify Function read it, so it stays out of the browser bundle.
 
 Then:
 
@@ -66,30 +84,35 @@ Then:
 npm install
 npm run dev       # start the dev server at http://localhost:5173
 npm run build     # production build into dist/
-npm run preview   # serve the production build locally
+npm run preview   # serve the production build locally (Explore needs the dev server or Netlify)
 npm run lint      # run oxlint
 ```
 
 ## Deployment
 
-Deployed on Netlify. The build settings are in [`netlify.toml`](netlify.toml): build command `npm run build`, publish directory `dist`. The two variables from `.env` are set under Netlify's environment variables, because `.env` isn't in the repo.
+Deployed on Netlify. The build settings are in [`netlify.toml`](netlify.toml): build command `npm run build`, publish directory `dist`. Netlify picks up the function in `netlify/functions/` on its own. The three variables from `.env` are set under Netlify's environment variables, because `.env` isn't in the repo.
 
 ## Project structure
 
 ```
+netlify/functions/
+  football-data.mjs     proxy that adds the football-data.org key on the server
 src/
   App.jsx               shared state: page, explore position, squad, teams, match result
-  api/apiFootball.js    API-Football URLs, caching, rate limiting, response shapes
+  api/createFetcher.js  shared fetch helper: cache, rate limiting, in-flight request sharing
+  api/footballData.js   football-data.org URLs, errors, squad grouping
+  api/apiFootball.js    API-Football URLs, errors, ratings and squad shapes
   hooks/useFetch.js     custom hook: data, loading, error and retry for one url
-  hooks/useClubSquad.js custom hook: a club's squad with OVRs, shared by Explore and the builder
+  hooks/useClubSquad.js custom hook: a club's squad with OVRs (two requests combined)
   components/
     Header.jsx          title, Explore / Team Builder nav, squad count, light/dark toggle
     ExplorePage.jsx     league tabs, breadcrumbs, and which view to show
-    LeagueView.jsx      a league's table and top scorers
-    StandingsTable.jsx  2024–25 final table; each club opens its page
-    TopScorers.jsx      2024–25 top 10 scorers
-    ClubView.jsx        a club's current squad grouped by position
-    PlayerView.jsx      one player's profile and 2024–25 stats
+    LeagueView.jsx      a league's table, matchday and top scorers
+    StandingsTable.jsx  the current table; each club opens its page
+    MatchdayResults.jsx the current matchday's games
+    TopScorers.jsx      top 10 scorers
+    ClubView.jsx        a club's info, games and squad with search
+    MatchList.jsx       games as home · score or kick-off · away
     ErrorToggle.jsx     the Simulate API failure checkbox
     ScoutPlayers.jsx    league picker, club or squad view, simulate-failure toggle
     ClubPicker.jsx      grid of clubs in the chosen league
@@ -108,5 +131,6 @@ src/
     SlotPicker.jsx      list of players for a clicked position
     TeamSummary.jsx     lineup stats, kick off button, match result
   data/formations.js    formation layouts
+  utils/normalize.js    accent-insensitive text for search
   utils/teamStats.js    lineup averages and match scoring
 ```

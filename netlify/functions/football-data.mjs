@@ -8,11 +8,20 @@ export default async (request) => {
     return Response.json({ message: 'Only GET requests are allowed.' }, { status: 405 })
   }
 
+  // Without a key football-data.org answers with a vague "restricted" error, so say what's wrong.
+  const key = Netlify.env.get('FOOTBALL_DATA_KEY')
+  if (!key) {
+    return Response.json(
+      { message: 'The FOOTBALL_DATA_KEY environment variable is not set on Netlify.' },
+      { status: 500 },
+    )
+  }
+
   const url = new URL(request.url)
   const path = url.pathname.replace(/^\/api\/football-data/, '')
 
   const response = await fetch(`${API_BASE}${path}${url.search}`, {
-    headers: { 'X-Auth-Token': Netlify.env.get('FOOTBALL_DATA_KEY') ?? '' },
+    headers: { 'X-Auth-Token': key },
   })
 
   return new Response(response.body, {

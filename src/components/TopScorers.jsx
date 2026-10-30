@@ -23,7 +23,10 @@ function TopScorers({ competition, simulateError }) {
             <div className="scorers__info">
               <p className="scorers__name">{player.name}</p>
               <p className="scorers__club">
-                {team.shortName ?? team.name} · {assists ?? 0} assists · {playedMatches} games
+                {/* The free plan leaves assists out (null), so only show them when they're there. */}
+                {[team.shortName ?? team.name, assists != null && `${assists} assists`, `${playedMatches} games`]
+                  .filter(Boolean)
+                  .join(' · ')}
               </p>
             </div>
             <p className="scorers__goals">
