@@ -1,4 +1,5 @@
 import PlayerAvatar from './PlayerAvatar'
+import Icon from './Icon'
 
 function PlayerCard({ player, onRemove }) {
   return (
@@ -21,7 +22,7 @@ function PlayerCard({ player, onRemove }) {
         aria-label={`Remove ${player.name}`}
         onClick={() => onRemove(player.id)}
       >
-        ✕
+        <Icon name="close" size={18} />
       </button>
     </li>
   )

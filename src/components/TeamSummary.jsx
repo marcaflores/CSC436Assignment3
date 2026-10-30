@@ -1,4 +1,5 @@
 import { getLineupStats } from '../utils/teamStats'
+import Icon from './Icon'
 
 function getOutcome(result) {
   if (result.goalsFor > result.goalsAgainst) return { label: 'Won', tone: 'ready' }
@@ -40,7 +41,9 @@ function TeamSummary({ squad, formationKey, assignments, teamLabel, opponent, ma
         <p className="team-summary__badge team-summary__badge--idle">Build your squad to get started</p>
       ) : !isComplete ? (
         <p className="team-summary__badge team-summary__badge--warning">
-          {totalSlots - filledSlots} slot{totalSlots - filledSlots === 1 ? '' : 's'} still need a player
+          {totalSlots - filledSlots === 1
+            ? '1 slot still needs a player'
+            : `${totalSlots - filledSlots} slots still need a player`}
         </p>
       ) : (
         <>
@@ -53,7 +56,9 @@ function TeamSummary({ squad, formationKey, assignments, teamLabel, opponent, ma
             {matchResult ? 'Play again' : `Kick off vs ${opponent.label}`}
           </button>
           {!opponent.isComplete && (
-            <p className="team-summary__hint">Lineup ready ✓ — finish {opponent.label}&apos;s lineup to play.</p>
+            <p className="team-summary__hint">
+              <Icon name="check" size={16} /> Lineup ready. Finish {opponent.label}&apos;s lineup to play.
+            </p>
           )}
         </>
       )}

@@ -1,4 +1,5 @@
 // Shared loading and error views so every fetch in the app looks and behaves the same way.
+import Icon from './Icon'
 
 export function LoadingRows({ label, rows = 5 }) {
   return (
@@ -29,7 +30,7 @@ export function FetchError({ title, error, onRetry }) {
   return (
     <div className="fetch-error" role="alert">
       <p className="fetch-error__title">
-        <span aria-hidden="true">⚠️</span> {title}
+        <Icon name="alert" size={18} /> {title}
       </p>
       <p className="fetch-error__message">{error.message}</p>
       <button type="button" className="btn btn--outline" onClick={onRetry}>
