@@ -1,13 +1,14 @@
 import { useEffect, useRef } from 'react'
-import { COMPETITIONS } from '../api/footballData'
+import { COMPETITIONS, yearLabel } from '../api/footballData'
 import ErrorToggle from './ErrorToggle'
 import LeagueView from './LeagueView'
 import ClubView from './ClubView'
 
-// League → club, with this season's data from football-data.org. Where the user is lives in App
-// (`explore`), so it survives a trip to the builder and back. Each view only fetches when opened.
+// League → club, with football-data.org data for this season or a past one. Where the user is
+// lives in App (`explore`), so it survives a trip to another page and back. Each view only
+// fetches when it's opened.
 function ExplorePage({ explore, onNavigate, simulateError, onSimulateErrorChange }) {
-  const { code, club } = explore
+  const { code, season, club } = explore
   const competition = COMPETITIONS.find((entry) => entry.code === code)
 
   // After the user moves to another view, focus its heading so keyboard and screen reader users
@@ -26,8 +27,10 @@ function ExplorePage({ explore, onNavigate, simulateError, onSimulateErrorChange
     onNavigate(next)
   }
 
-  const openLeague = (nextCode) => navigate({ code: nextCode, club: null })
-  const openClub = (nextClub) => navigate({ code, club: nextClub })
+  // The season stays picked when switching leagues, so you can compare the same year across them.
+  const openLeague = (nextCode) => navigate({ code: nextCode, season, club: null })
+  const changeSeason = (nextSeason) => navigate({ code, season: nextSeason, club: null })
+  const openClub = (nextClub) => navigate({ code, season, club: nextClub })
 
   return (
     <main className="explore">
@@ -52,6 +55,7 @@ function ExplorePage({ explore, onNavigate, simulateError, onSimulateErrorChange
             <li>
               <button type="button" className="breadcrumbs__link" onClick={() => openLeague(code)}>
                 {competition.name}
+                {season ? ` ${yearLabel(season)}` : ''}
               </button>
             </li>
             <li>
@@ -71,8 +75,10 @@ function ExplorePage({ explore, onNavigate, simulateError, onSimulateErrorChange
         />
       ) : (
         <LeagueView
-          key={code}
+          key={`${code}-${season}`}
           competition={competition}
+          seasonYear={season}
+          onSeasonChange={changeSeason}
           simulateError={simulateError}
           onOpenClub={openClub}
           headingRef={headingRef}

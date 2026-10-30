@@ -13,6 +13,7 @@ export const COMPETITIONS = [
   { code: 'SA', name: 'Serie A' },
   { code: 'BL1', name: 'Bundesliga' },
   { code: 'FL1', name: 'Ligue 1' },
+  { code: 'CL', name: 'Champions League' },
 ]
 
 export function footballDataUrl(path, params = {}, { broken = false } = {}) {
@@ -37,11 +38,24 @@ export const fetchFootballData = createFetcher({
   },
 })
 
-// "2025-08-15" → "2025–26"
-export function seasonLabel(season) {
-  const startYear = Number(season.startDate.slice(0, 4))
+// 2025 → "2025–26"
+export function yearLabel(startYear) {
   return `${startYear}–${String(startYear + 1).slice(2)}`
 }
+
+// A season from the API ("startDate": "2025-08-15") → "2025–26"
+export function seasonLabel(season) {
+  return yearLabel(Number(season.startDate.slice(0, 4)))
+}
+
+// Seasons start in July or later, so before July the current season began last year.
+function currentStartYear() {
+  const now = new Date()
+  return now.getMonth() >= 6 ? now.getFullYear() : now.getFullYear() - 1
+}
+
+// The free plan has the current season and the three before it; older ones come back "restricted".
+export const PAST_SEASONS = [1, 2, 3].map((yearsBack) => currentStartYear() - yearsBack)
 
 // Squad positions are either broad ("Defence") or detailed ("Centre-Back"), depending on the club.
 const POSITION_GROUPS = [

@@ -2,10 +2,10 @@ import { useFetch } from '../hooks/useFetch'
 import { fetchFootballData, footballDataUrl } from '../api/footballData'
 import { FetchError, LoadingRows } from './FetchStatus'
 
-function TopScorers({ competition, simulateError }) {
+function TopScorers({ competition, seasonParams, simulateError }) {
   const url = footballDataUrl(
     `/competitions/${competition.code}/scorers`,
-    { limit: 10 },
+    { ...seasonParams, limit: 10 },
     { broken: simulateError },
   )
   const { data, loading, error, retry } = useFetch(url, fetchFootballData)
@@ -23,7 +23,7 @@ function TopScorers({ competition, simulateError }) {
             <div className="scorers__info">
               <p className="scorers__name">{player.name}</p>
               <p className="scorers__club">
-                {/* The free plan leaves assists out (null), so only show them when they're there. */}
+                {/* The free plan leaves the current season's assists out (null), so only show them when they're there. */}
                 {[team.shortName ?? team.name, assists != null && `${assists} assists`, `${playedMatches} games`]
                   .filter(Boolean)
                   .join(' · ')}

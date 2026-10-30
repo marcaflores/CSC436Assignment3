@@ -23,7 +23,7 @@ function ordinal(number) {
 // this season, and its current squad. Two requests.
 function ClubView({ club, simulateError, headingRef }) {
   const [search, setSearch] = useState('')
-  const { standing, season } = club
+  const { standing, season, isPastSeason } = club
 
   const teamUrl = footballDataUrl(`/teams/${club.id}`, {}, { broken: simulateError })
   const matchesUrl = footballDataUrl(
@@ -70,17 +70,23 @@ function ClubView({ club, simulateError, headingRef }) {
 
     return (
       <>
-        <h4 className="explore-panel__subtitle">Recent results</h4>
+        <h4 className="explore-panel__subtitle">
+          {isPastSeason ? `Last games of ${seasonLabel(season)}` : 'Recent results'}
+        </h4>
         {played.length === 0 ? (
           <p className="empty-state">No games played yet.</p>
         ) : (
           <MatchList matches={played.slice(-RECENT_COUNT).reverse()} showCompetition />
         )}
-        <h4 className="explore-panel__subtitle">Next up</h4>
-        {upcoming.length === 0 ? (
-          <p className="empty-state">No games scheduled.</p>
-        ) : (
-          <MatchList matches={upcoming.slice(0, UPCOMING_COUNT)} showCompetition />
+        {!isPastSeason && (
+          <>
+            <h4 className="explore-panel__subtitle">Next up</h4>
+            {upcoming.length === 0 ? (
+              <p className="empty-state">No games scheduled.</p>
+            ) : (
+              <MatchList matches={upcoming.slice(0, UPCOMING_COUNT)} showCompetition />
+            )}
+          </>
         )}
       </>
     )
@@ -152,6 +158,7 @@ function ClubView({ club, simulateError, headingRef }) {
             {name}
           </h2>
           <p className="explore-view__subtitle">
+            {isPastSeason ? 'Finished ' : ''}
             {ordinal(standing.position)} in {seasonLabel(season)} · {standing.points} pts ·{' '}
             {standing.won}W {standing.draw}D {standing.lost}L
           </p>
@@ -167,6 +174,8 @@ function ClubView({ club, simulateError, headingRef }) {
         </div>
         <div className="club-view__squad">
           <h3 className="explore-view__section-title">Squad</h3>
+          {/* football-data.org only has the current squad, not past seasons' squads. */}
+          {isPastSeason && <p className="scout-note">This is {name}'s current squad.</p>}
           {renderSquad()}
           <p className="scout-note">
             To add {name} players to your squad, scout them in the Team Builder, which has their
