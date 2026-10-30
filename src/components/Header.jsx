@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 
 const PAGES = [
-  { id: 'explore', label: 'Explore', tagline: 'Explore leagues, clubs and players.' },
+  { id: 'explore', label: 'Explore', tagline: 'League tables, clubs and squads, this season and past ones.' },
+  { id: 'schedule', label: 'Schedule', tagline: 'Results, live scores and fixtures by day.' },
   { id: 'builder', label: 'Team Builder', tagline: 'Build your squad, pick a formation, set the lineup.' },
 ]
 

@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import Header from './components/Header'
 import ExplorePage from './components/ExplorePage'
+import SchedulePage from './components/SchedulePage'
 import ScoutPlayers from './components/ScoutPlayers'
 import PlayerForm from './components/PlayerForm'
 import PlayerList from './components/PlayerList'
@@ -10,7 +11,9 @@ import { getLineupStats, simulateMatch } from './utils/teamStats'
 import { COMPETITIONS } from './api/footballData'
 import './App.css'
 
-const INITIAL_EXPLORE = { code: COMPETITIONS[0].code, club: null }
+const INITIAL_EXPLORE = { code: COMPETITIONS[0].code, season: null, club: null }
+// date: null means today
+const INITIAL_SCHEDULE = { date: null, competition: 'ALL' }
 
 const INITIAL_TEAMS = {
   team1: { label: 'Team 1', formationKey: '4-3-3', assignments: {} },
@@ -20,7 +23,8 @@ const INITIAL_TEAMS = {
 function App() {
   const [page, setPage] = useState('explore')
   const [explore, setExplore] = useState(INITIAL_EXPLORE)
-  // One switch for both pages, so the error state is on or off everywhere.
+  const [schedule, setSchedule] = useState(INITIAL_SCHEDULE)
+  // One switch for every page, so the error state is on or off everywhere.
   const [simulateError, setSimulateError] = useState(false)
   const [squad, setSquad] = useState([])
   const [teams, setTeams] = useState(INITIAL_TEAMS)
@@ -104,14 +108,25 @@ function App() {
     <div className="app">
       <Header squadSize={squad.length} page={page} onPageChange={setPage} />
 
-      {page === 'explore' ? (
+      {page === 'explore' && (
         <ExplorePage
           explore={explore}
           onNavigate={setExplore}
           simulateError={simulateError}
           onSimulateErrorChange={setSimulateError}
         />
-      ) : (
+      )}
+
+      {page === 'schedule' && (
+        <SchedulePage
+          schedule={schedule}
+          onScheduleChange={setSchedule}
+          simulateError={simulateError}
+          onSimulateErrorChange={setSimulateError}
+        />
+      )}
+
+      {page === 'builder' && (
         <main className="app-layout">
           <section className="app-layout__sidebar">
             <ScoutPlayers

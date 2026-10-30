@@ -111,12 +111,14 @@
 .app-nav__link {
   width: 100%;
   min-height: 44px;
-  padding: 0 1rem;
+  padding: 0 0.25rem;
   border: 1px solid rgba(255, 255, 255, 0.25);
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.08);
   color: #fff;
   font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
   cursor: pointer;
   transition: background-color 0.15s ease;
 }
@@ -131,6 +133,13 @@
   color: var(--color-primary-dark);
 }
 
+@media (min-width: 400px) {
+  .app-nav__link {
+    padding: 0 0.5rem;
+    font-size: 0.9rem;
+  }
+}
+
 @media (min-width: 900px) {
   .app-nav {
     order: 0;
@@ -139,6 +148,11 @@
 
   .app-nav__list li {
     flex: none;
+  }
+
+  .app-nav__link {
+    padding: 0 1rem;
+    font-size: 1rem;
   }
 }
 
@@ -1531,4 +1545,119 @@
 .club-squad__meta {
   font-size: 0.8rem;
   color: var(--color-muted);
+}
+
+/* League and schedule headings with a select beside them; it drops below on narrow screens */
+.explore-view__intro--league,
+.schedule__intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+/* Schedule page */
+.schedule__days {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Phones: the day buttons on one row, then ‹ date › across the full width below */
+.schedule__picker {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.schedule__picker .filter-input {
+  min-width: 0;
+}
+
+.schedule__step {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+@media (min-width: 600px) {
+  .schedule__picker {
+    flex: 0 1 260px;
+  }
+}
+
+.schedule__groups {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+@media (min-width: 900px) {
+  .schedule__groups {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.schedule__competition {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.schedule__emblem {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+/* Several competition emblems are dark, so they get a light backing in dark mode */
+:root[data-theme='dark'] .schedule__emblem {
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  background: #fff;
+}
+
+/* The day buttons share one row equally, so all three fit at 320px */
+.schedule__days .league-tabs {
+  flex: 1 1 100%;
+  flex-wrap: nowrap;
+}
+
+.schedule__days .league-tabs li {
+  flex: 1;
+}
+
+.schedule__days .league-tabs__button {
+  width: 100%;
+  padding: 0 0.4rem;
+}
+
+@media (min-width: 600px) {
+  .schedule__days .league-tabs {
+    flex: none;
+  }
+
+  .schedule__days .league-tabs__button {
+    padding: 0 1rem;
+  }
+}
+
+/* The smallest phones skip the tagline and crest so the title gets the room */
+.app-header__brand p,
+.app-header__crest {
+  display: none;
+}
+
+@media (min-width: 400px) {
+  .app-header__brand p {
+    display: block;
+  }
+
+  .app-header__crest {
+    display: inline;
+  }
 }

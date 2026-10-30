@@ -18,16 +18,22 @@ function MatchScore({ match }) {
   return <span className="match__time">{timeFormat.format(new Date(match.utcDate))}</span>
 }
 
-// Games as rows of "home · score or kick-off · away", in local time.
-function MatchList({ matches, showCompetition = false }) {
+// Games as rows of "home · score or kick-off · away", in local time. The Schedule page turns
+// the date off because every game in its list is on the same day.
+function MatchList({ matches, showDate = true, showCompetition = false }) {
   return (
     <ul className="match-list">
       {matches.map((match) => (
         <li key={match.id} className="match">
-          <p className="match__meta">
-            <time dateTime={match.utcDate}>{dateFormat.format(new Date(match.utcDate))}</time>
-            {showCompetition && ` · ${match.competition.name}`}
-          </p>
+          {(showDate || showCompetition) && (
+            <p className="match__meta">
+              {showDate && (
+                <time dateTime={match.utcDate}>{dateFormat.format(new Date(match.utcDate))}</time>
+              )}
+              {showDate && showCompetition && ' · '}
+              {showCompetition && match.competition.name}
+            </p>
+          )}
           <div className="match__teams">
             <span className="match__team match__team--home">
               <span className="match__name">{match.homeTeam.shortName ?? match.homeTeam.name}</span>
