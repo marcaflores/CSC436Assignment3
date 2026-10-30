@@ -18,7 +18,7 @@ function Header({ squadSize }) {
       <div className="app-header__brand">
         <span className="app-header__crest" aria-hidden="true">⚽</span>
         <div>
-          <h1>Matchday Builder</h1>
+          <h1>Let's Play Soccer</h1>
           <p>Build your squad, pick a formation, set the lineup.</p>
         </div>
       </div>

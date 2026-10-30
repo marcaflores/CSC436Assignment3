@@ -1,10 +1,10 @@
-# Matchday Builder
+# Let's Play Soccer
 
 Async React project (Project 3) for CSC 436. Built with [Vite](https://vite.dev) + React, using data from [API-Football](https://www.api-football.com/).
 
 **Live site:** [letsplaysoccer.netlify.app](https://letsplaysoccer.netlify.app/)
 
-Matchday Builder is a soccer team builder that uses real players. Pick a league and a club to scout its current squad, add players to your own squad, pick a formation for each of two teams, then click a position on the field to choose from the players who can play it. Once both lineups are full, kick off a simulated match. The team with the higher average rating wins.
+Let's Play Soccer is a soccer team builder that uses real players. Pick a league and a club to scout its current squad, add players to your own squad, pick a formation for each of two teams, then click a position on the field to choose from the players who can play it. Once both lineups are full, kick off a simulated match. The team with the higher average rating wins.
 
 ## Features
 
